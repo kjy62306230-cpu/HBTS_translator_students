@@ -1,0 +1,46 @@
+HBTS 툴 — GitHub 올리는 법
+=====================================
+
+이 폴더를 원하는 위치에 풀어놓고, 그 폴더에서 아래를 실행하세요.
+(Windows: 폴더에서 우클릭 → "Git Bash Here" 또는 터미널 열기)
+
+
+▶ 처음 한 번만
+
+  git init -b main
+  git add .
+  git commit -m "HBTS 진로학습 설계 툴 v4"
+  git remote add origin https://github.com/kjy62306230-cpu/HBTS_translator_students.git
+  git push -u origin main
+
+
+▶ 다음부터는 이것만
+
+  git add .
+  git commit -m "수정 내용"
+  git push
+
+
+-------------------------------------
+GitHub Pages 로 배포하기 (선택)
+
+  GitHub 저장소 → Settings → Pages
+  → Source: Deploy from a branch
+  → Branch: main / (root) → Save
+
+  1~2분 뒤 아래 주소로 열립니다.
+  https://kjy62306230-cpu.github.io/HBTS_translator_students/
+
+  ⚠️ 공개 주소가 됩니다. 링크를 아는 사람은 누구나 툴을 쓸 수 있습니다.
+     (API 키는 각자 브라우저에 저장되므로 J님 키가 새는 건 아닙니다.)
+     비공개로 쓰시려면 Pages 를 켜지 말고 index.html 파일만 쓰세요.
+
+
+-------------------------------------
+⚠️ 절대 올리면 안 되는 것
+
+  · 검사 결과지 PDF  (학생 실명 + 검사 결과 = 개인정보)
+  · 핸드오프 문서, 04_추가결정  (사업 전략 · 단가 · 수익 구조)
+
+  .gitignore 로 막아두었지만, git add 하기 전에
+  git status 로 한 번 확인하는 습관을 권합니다.
