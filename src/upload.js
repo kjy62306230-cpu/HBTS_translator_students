@@ -134,13 +134,21 @@ async function handlePdf(file){
 }
 
 /* ---------- 페이지 → PNG ---------- */
-async function renderPage(pg, scale){
+async function renderPage(pg, scale, asJpeg){
   const vp = pg.getViewport({scale: scale||2.0});
   const cv = document.createElement('canvas');
   cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
-  await pg.render({canvasContext: cv.getContext('2d'), viewport: vp}).promise;
-  return cv.toDataURL('image/png');
+  const cx = cv.getContext('2d');
+  /* JPEG 는 투명 배경을 검게 칠하므로 흰 바탕을 먼저 깐다 */
+  if(asJpeg){ cx.fillStyle='#fff'; cx.fillRect(0,0,cv.width,cv.height); }
+  await pg.render({canvasContext: cx, viewport: vp}).promise;
+  /* 스캔본 8장을 PNG로 보내면 5MB가 넘어 전송이 통째로 실패하는 경우가 있다.
+     JPEG q0.85 로 보내면 1/3 이하로 줄고 숫자 판독 정확도는 그대로다. */
+  return asJpeg ? cv.toDataURL('image/jpeg', 0.85) : cv.toDataURL('image/png');
 }
+
+/* dataURL 의 media_type 을 그대로 뽑아 쓴다 (png/jpeg 혼용 대비) */
+const mimeOf = u => (u.match(/^data:([^;]+);/)||[,'image/png'])[1];
 
 /* ---------- 텍스트 파싱 ----------
    pdf.js 가 한글을 글자 단위로 쪼개 뽑으므로 공백을 전부 지운 문자열에서 매칭한다.
@@ -378,7 +386,10 @@ async function runScan(key){
   try{
     /* 탐색용은 가볍게 렌더 */
     const thumbs=[];
-    for(let i=1;i<=n;i++) thumbs.push(await renderPage(await PDFDOC.getPage(i), 1.5));
+    for(let i=1;i<=n;i++) thumbs.push(await renderPage(await PDFDOC.getPage(i), 1.5, true));
+
+    const sentMB = thumbs.reduce((a,t)=>a+t.length,0)/1024/1024;
+    setStatus(`AI가 앞 ${n}페이지를 읽는 중… <b>${sentMB.toFixed(1)}MB 전송</b> <span class="spin"></span>`);
 
     const content=[{type:'text', text:
 `HBTS 뇌 사고유형 검사 결과지 PDF입니다. 글자가 전부 이미지로 되어 있어 직접 읽어야 합니다.
@@ -405,7 +416,7 @@ async function runScan(key){
 
     thumbs.forEach((t,i)=>{
       content.push({type:'text', text:`── ${i+1}페이지 ──`});
-      content.push({type:'image', source:{type:'base64', media_type:'image/png', data:t.split(',')[1]}});
+      content.push({type:'image', source:{type:'base64', media_type:mimeOf(t), data:t.split(',')[1]}});
     });
 
     content.push({type:'text', text:
@@ -471,9 +482,62 @@ async function runScan(key){
     showConfirm(meta, sc, true, null, chk, true);
 
   }catch(e){
-    setStatus(`<b>AI 판독에 실패했습니다.</b> ${String(e.message||e)}<br>
-      이 결과지는 글자가 이미지로 되어 있어 자동 추출이 안 됩니다.
-      아래 칸에 <b>직접 입력</b>하시거나, 키·크레딧·모델명을 확인 후 다시 시도해 주세요.
-      <div style="margin-top:10px"><button class="btn sm ghost" onclick="openAI('scan')">다시 시도</button></div>`, 'err');
+    const msg = String(e.message||e);
+    /* 「Failed to fetch」 는 서버가 답을 준 게 아니라 요청 자체가 막힌 것이다.
+       키·크레딧 문제가 아니므로 안내를 갈라준다. */
+    const blocked = /failed to fetch|networkerror|load failed/i.test(msg);
+    setStatus(`<b>AI 판독에 실패했습니다.</b> ${msg}<br>
+      ${blocked
+        ? `이건 <b>키나 크레딧 문제가 아니라 요청이 브라우저 밖으로 못 나간 것</b>입니다.
+           아래 <b>연결 테스트</b>를 눌러 원인을 좁혀 보세요.`
+        : `키·크레딧·모델명을 확인 후 다시 시도해 주세요. 아래 칸에 <b>직접 입력</b>하셔도 됩니다.`}
+      <div style="margin-top:10px">
+        <button class="btn sm" onclick="apiSelfTest()">연결 테스트</button>
+        <button class="btn sm ghost" onclick="openAI('scan')">다시 시도</button>
+      </div>`, 'err');
+  }
+}
+
+/* ------------------------------------------------------------------
+   연결 테스트 — 「Failed to fetch」 의 원인을 좁힌다
+   ------------------------------------------------------------------
+   ① 아주 작은 텍스트 요청을 보낸다 (이미지 없음, 토큰 몇 개)
+      성공 → 통신은 되는 것. 앞의 실패는 전송량 문제였다.
+      실패 → api.anthropic.com 자체가 막혀 있다.
+             (광고·추적 차단 확장, 회사·학교 방화벽, 백신의 웹 보호 기능)
+------------------------------------------------------------------ */
+async function apiSelfTest(){
+  const key = getKey();
+  if(!key){ setStatus('API 키가 저장돼 있지 않습니다. 먼저 키를 넣어주세요.','warnst'); return; }
+  const model = ($('apiModel') && $('apiModel').value.trim()) || AI_MODEL_DEFAULT;
+  setStatus('연결을 확인하는 중… <span class="spin"></span>');
+  try{
+    const r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'content-type':'application/json','x-api-key':key,
+        'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({ model, max_tokens:8, messages:[{role:'user',content:'1+1은?'}] })
+    });
+    const j = await r.json().catch(()=>({}));
+    if(r.ok){
+      setStatus(`<b>통신은 정상입니다.</b> 키·크레딧 모두 살아 있습니다.<br>
+        앞의 실패는 <b>보내는 이미지가 너무 컸던 것</b>으로 보입니다.
+        <div style="margin-top:10px"><button class="btn sm" onclick="openAI('scan')">다시 판독</button></div>`, 'okst');
+    } else {
+      setStatus(`<b>서버가 거절했습니다.</b> HTTP ${r.status} — ${j?.error?.message||''}<br>
+        통신 자체는 되고 있으니 <b>키가 틀렸거나 크레딧이 없는 것</b>입니다.
+        console.anthropic.com 에서 확인해 주세요.
+        <div style="margin-top:10px"><button class="btn sm ghost" onclick="openAI('scan')">키 다시 넣기</button></div>`, 'err');
+    }
+  }catch(e){
+    setStatus(`<b>요청이 아예 나가지 못했습니다.</b> ${String(e.message||e)}<br>
+      api.anthropic.com 으로 가는 길이 막혀 있습니다. 아래를 차례로 확인해 주세요.
+      <ul style="margin:8px 0 0 18px">
+        <li>광고·추적 차단 확장 프로그램 (uBlock, AdGuard 등) — 이 페이지에서 잠시 끄기</li>
+        <li>백신 프로그램의 <b>웹 보호 / HTTPS 검사</b> 기능</li>
+        <li>회사·학교 와이파이 — 개인 네트워크나 휴대폰 핫스팟으로 바꿔 시도</li>
+        <li>브라우저를 <b>시크릿 창</b>으로 열어 확장 없이 시도</li>
+      </ul>
+      <div style="margin-top:10px"><button class="btn sm ghost" onclick="apiSelfTest()">다시 테스트</button></div>`, 'err');
   }
 }
