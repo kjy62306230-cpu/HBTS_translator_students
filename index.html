@@ -1879,8 +1879,28 @@ function livePreview(){
 const AI_MODEL_DEFAULT='claude-sonnet-4-5';
 let AI_MODE='deep';
 
-function getKey(){ let k=''; try{k=localStorage.getItem('hbts_api_key')||''}catch(e){} return k||window.__hbtsKey||''; }
-function setKey(k){ window.__hbtsKey=k; try{localStorage.setItem('hbts_api_key',k)}catch(e){} }
+/* 붙여넣기 사고 대비 — 눈에 안 보이는 문자를 전부 털어낸다.
+   콘솔에서 키를 복사하면 제로폭 문자·줄바꿈·비단절 공백이 딸려오는 일이 흔하다. */
+function cleanKey(k){
+  return String(k||'')
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g,'')   // 제로폭 · 비단절 공백
+    .replace(/\s+/g,'')                             // 줄바꿈 · 공백 전부
+    .trim();
+}
+/* 키가 「모양이라도 맞는지」 먼저 본다. 서버에 물어보기 전에 걸러내면
+   invalid x-api-key 를 보고 원인을 헤매는 시간이 사라진다. */
+function keyProblem(k){
+  if(!k) return '키가 비어 있습니다.';
+  if(/[…·]|\.\.\./.test(k)) return '콘솔 화면에 <b>가려진 채로 표시된 키</b>를 복사하신 것 같습니다. 가운데가 「…」로 생략된 키는 쓸 수 없습니다.';
+  if(!/^sk-ant-/.test(k)) return `키는 <b>sk-ant-</b> 로 시작해야 합니다. 지금 넣으신 값은 「${k.slice(0,10)}…」 로 시작합니다.`;
+  if(k.length < 60) return `키가 너무 짧습니다 (${k.length}자). 정상 키는 100자 안팎입니다. <b>일부만 복사</b>되었을 가능성이 높습니다.`;
+  return '';
+}
+function maskKey(k){ return k ? k.slice(0,14)+'…'+k.slice(-4)+` (${k.length}자)` : '없음'; }
+
+function getKey(){ let k=''; try{k=localStorage.getItem('hbts_api_key')||''}catch(e){} return cleanKey(k||window.__hbtsKey||''); }
+function setKey(k){ k=cleanKey(k); window.__hbtsKey=k; try{localStorage.setItem('hbts_api_key',k)}catch(e){} }
+function clearKey(){ window.__hbtsKey=''; try{localStorage.removeItem('hbts_api_key')}catch(e){} openAI(AI_MODE||'scan'); }
 
 function openAI(mode){
   AI_MODE=mode||'deep';
@@ -1983,9 +2003,10 @@ ${p.name} 학생이 어떤 사람인지 한 문장. 그 아래 2~3문장으로 �
 }
 
 async function runAI(){
-  const key=$('apiKey').value.trim();
+  const key=cleanKey($('apiKey').value);
   const model=$('apiModel').value.trim()||AI_MODEL_DEFAULT;
-  if(!key){ $('aiMsg').textContent='API 키를 입력해 주세요.'; return; }
+  const bad = keyProblem(key);
+  if(bad){ $('aiMsg').innerHTML = bad; return; }
   setKey(key); closeAI();
   if(AI_MODE==='scan'){ await runScan(key); return; }
   if(AI_MODE==='vision'){ await retryVision(); return; }
@@ -2691,9 +2712,16 @@ async function runScan(key){
       ${blocked
         ? `이건 <b>키나 크레딧 문제가 아니라 요청이 브라우저 밖으로 못 나간 것</b>입니다.
            아래 <b>연결 테스트</b>를 눌러 원인을 좁혀 보세요.`
-        : `키·크레딧·모델명을 확인 후 다시 시도해 주세요. 아래 칸에 <b>직접 입력</b>하셔도 됩니다.`}
+        : (/invalid x-api-key|authentication/i.test(msg)
+            ? `<b>통신은 정상입니다.</b> 서버가 「이 키는 없는 키」라고 답했습니다.
+               지금 저장된 키: <code>${maskKey(getKey())}</code><br>
+               <b>가장 흔한 원인은 콘솔에서 키를 잘라 복사한 것</b>입니다.
+               키 전체는 <b>만들 때 딱 한 번만</b> 보입니다. 목록 화면에 보이는 가려진 키는 쓸 수 없어요.
+               console.anthropic.com 에서 <b>새 키를 만들어</b> 그 자리에서 복사해 넣어 주세요.`
+            : `키·크레딧·모델명을 확인 후 다시 시도해 주세요. 아래 칸에 <b>직접 입력</b>하셔도 됩니다.`)}
       <div style="margin-top:10px">
-        <button class="btn sm" onclick="apiSelfTest()">연결 테스트</button>
+        <button class="btn sm" onclick="clearKey()">키 지우고 새로 넣기</button>
+        <button class="btn sm ghost" onclick="apiSelfTest()">연결 테스트</button>
         <button class="btn sm ghost" onclick="openAI('scan')">다시 시도</button>
       </div>`, 'err');
   }
@@ -2725,10 +2753,16 @@ async function apiSelfTest(){
         앞의 실패는 <b>보내는 이미지가 너무 컸던 것</b>으로 보입니다.
         <div style="margin-top:10px"><button class="btn sm" onclick="openAI('scan')">다시 판독</button></div>`, 'okst');
     } else {
-      setStatus(`<b>서버가 거절했습니다.</b> HTTP ${r.status} — ${j?.error?.message||''}<br>
-        통신 자체는 되고 있으니 <b>키가 틀렸거나 크레딧이 없는 것</b>입니다.
-        console.anthropic.com 에서 확인해 주세요.
-        <div style="margin-top:10px"><button class="btn sm ghost" onclick="openAI('scan')">키 다시 넣기</button></div>`, 'err');
+      setStatus(`<b>통신은 정상입니다.</b> 서버가 거절했습니다 — HTTP ${r.status} ${j?.error?.message||''}<br>
+        저장된 키: <code>${maskKey(key)}</code><br>
+        ${/invalid x-api-key|authentication/i.test(j?.error?.message||'')
+          ? `이 키는 <b>존재하지 않는 키</b>입니다. 키 전체는 <b>만들 때 딱 한 번만</b> 보이므로,
+             목록 화면에서 복사하면 가운데가 잘린 값이 들어갑니다.
+             console.anthropic.com → API Keys → <b>Create Key</b> 로 새로 만들어 그 자리에서 복사해 주세요.`
+          : `크레딧 잔액과 모델명을 확인해 주세요.`}
+        <div style="margin-top:10px">
+          <button class="btn sm" onclick="clearKey()">키 지우고 새로 넣기</button>
+        </div>`, 'err');
     }
   }catch(e){
     setStatus(`<b>요청이 아예 나가지 못했습니다.</b> ${String(e.message||e)}<br>

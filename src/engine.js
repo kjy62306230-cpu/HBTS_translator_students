@@ -522,8 +522,28 @@ function livePreview(){
 const AI_MODEL_DEFAULT='claude-sonnet-4-5';
 let AI_MODE='deep';
 
-function getKey(){ let k=''; try{k=localStorage.getItem('hbts_api_key')||''}catch(e){} return k||window.__hbtsKey||''; }
-function setKey(k){ window.__hbtsKey=k; try{localStorage.setItem('hbts_api_key',k)}catch(e){} }
+/* 붙여넣기 사고 대비 — 눈에 안 보이는 문자를 전부 털어낸다.
+   콘솔에서 키를 복사하면 제로폭 문자·줄바꿈·비단절 공백이 딸려오는 일이 흔하다. */
+function cleanKey(k){
+  return String(k||'')
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g,'')   // 제로폭 · 비단절 공백
+    .replace(/\s+/g,'')                             // 줄바꿈 · 공백 전부
+    .trim();
+}
+/* 키가 「모양이라도 맞는지」 먼저 본다. 서버에 물어보기 전에 걸러내면
+   invalid x-api-key 를 보고 원인을 헤매는 시간이 사라진다. */
+function keyProblem(k){
+  if(!k) return '키가 비어 있습니다.';
+  if(/[…·]|\.\.\./.test(k)) return '콘솔 화면에 <b>가려진 채로 표시된 키</b>를 복사하신 것 같습니다. 가운데가 「…」로 생략된 키는 쓸 수 없습니다.';
+  if(!/^sk-ant-/.test(k)) return `키는 <b>sk-ant-</b> 로 시작해야 합니다. 지금 넣으신 값은 「${k.slice(0,10)}…」 로 시작합니다.`;
+  if(k.length < 60) return `키가 너무 짧습니다 (${k.length}자). 정상 키는 100자 안팎입니다. <b>일부만 복사</b>되었을 가능성이 높습니다.`;
+  return '';
+}
+function maskKey(k){ return k ? k.slice(0,14)+'…'+k.slice(-4)+` (${k.length}자)` : '없음'; }
+
+function getKey(){ let k=''; try{k=localStorage.getItem('hbts_api_key')||''}catch(e){} return cleanKey(k||window.__hbtsKey||''); }
+function setKey(k){ k=cleanKey(k); window.__hbtsKey=k; try{localStorage.setItem('hbts_api_key',k)}catch(e){} }
+function clearKey(){ window.__hbtsKey=''; try{localStorage.removeItem('hbts_api_key')}catch(e){} openAI(AI_MODE||'scan'); }
 
 function openAI(mode){
   AI_MODE=mode||'deep';
@@ -626,9 +646,10 @@ ${p.name} 학생이 어떤 사람인지 한 문장. 그 아래 2~3문장으로 �
 }
 
 async function runAI(){
-  const key=$('apiKey').value.trim();
+  const key=cleanKey($('apiKey').value);
   const model=$('apiModel').value.trim()||AI_MODEL_DEFAULT;
-  if(!key){ $('aiMsg').textContent='API 키를 입력해 주세요.'; return; }
+  const bad = keyProblem(key);
+  if(bad){ $('aiMsg').innerHTML = bad; return; }
   setKey(key); closeAI();
   if(AI_MODE==='scan'){ await runScan(key); return; }
   if(AI_MODE==='vision'){ await retryVision(); return; }
