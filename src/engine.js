@@ -456,7 +456,7 @@ function renderReport(p){
   const hiN = p.comp.length ? p.comp.map(a=>`${KB[a].ko}(${a})`).join(' · ') : `${A.ko}(${p.top1})`;
   H.push(`<div class="teacher"><div class="wrap">
     <span class="tag">교사 · 학부모용 — 학생 배부용 아님</span>
-    <h2 style="font-size:29px;font-weight:800;letter-spacing:-.042em;margin-bottom:20px">${p.name} 학생 지도 가이드</h2>
+    <h2 style="font-size:29px;font-weight:800;letter-spacing:-.042em;margin-bottom:20px">${p.name==='학생'?'학생':p.name+' 학생'} 지도 가이드</h2>
     <p style="opacity:.85">이 학생은 <b>${hiN}</b> 기능이 상대적으로 높고,
       <b>${L.ko}(${p.low}) ${s[p.low]}점</b>으로 이 영역이 가장 낮게 나타났습니다.
       <b>능력의 문제가 아니라 작동 방식의 차이</b>로 접근해 주십시오.</p>
