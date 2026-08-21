@@ -335,14 +335,33 @@ details.opt[open] summary::before{content:'－ '}
   body::before{display:none}
   .masthead,.btnrow,.editbar,.noprint,#input,.modal,.drop,.upstat{display:none!important}
   .wrap{max-width:100%;padding:0}
-  section.sec{padding:20px 0;break-inside:avoid}
+  /* ★ 섹션 전체에 break-inside:avoid 를 걸면 한 장을 넘는 섹션이 통째로 밀려
+     빈 페이지가 5장씩 생긴다. 섹션은 쪼개지게 두고, 안 쪼개질 「덩어리」만 지정한다. */
+  section.sec{padding:18px 0;break-inside:auto}
   .cover{break-after:page}
   .cover .wrap{padding:36px 0}
   .teacher{break-before:page}
-  .sechead{margin-bottom:20px}
+  .sechead{margin-bottom:20px;break-inside:avoid;break-after:avoid}
   .sechead .idx{font-size:40px}
-  h3.blk{margin:22px 0 10px;break-after:avoid}
-  .core{break-inside:avoid}
+  h3.blk{margin:22px 0 10px;break-after:avoid;break-inside:avoid}
+
+  /* 쪼개지면 안 되는 최소 단위들
+     ※ .core(학습법 한 덩어리)는 한 장보다 커서 avoid 를 걸어도 브라우저가 무시한다.
+        대신 「제목 + 바로 뒤 내용」이 갈라지지 않게만 잡는다. */
+  .core .ch{break-inside:avoid;break-after:avoid}
+  .core h4.mini{break-after:avoid}
+  ol.step{break-inside:avoid}
+  /* 교사용 마지막 목록 한 줄이 다음 장으로 넘어가지 않게 */
+  .teacher ul.pl{break-inside:avoid}
+  .teacher p.src{break-before:avoid}
+  .callout,.pull,.warnbox,.mission,.geo,.mcard,.entry,
+  .vz,.vzb,.vzbars,.tlx,.profile,.scores,.tags,.step li,
+  figure,tr,li{break-inside:avoid}
+  table{break-inside:auto}
+  thead{display:table-header-group}
+
+  /* 한 줄만 떨어져 나가지 않게 */
+  p,td,li{orphans:3;widows:3}
   .cover,.teacher,section.dark,.callout,.pull,.tags span,.warnbox,.geo,.mission,
   .mcard,.vzb i,.tlx-n::before,.vzarrow,
   ol.step li::before,.tl .ti::before{-webkit-print-color-adjust:exact;print-color-adjust:exact}
