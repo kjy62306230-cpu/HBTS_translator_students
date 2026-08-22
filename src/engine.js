@@ -73,6 +73,7 @@ function buildProfile(){
   }
 
   return { name:$('name').value.trim()||'학생', grade:$('grade').value,
+    mode: ($('mode')&&$('mode').value)||'both',
     scores:s, child:hasChild?child:null, shift,
     sorted, comp, kind, top1, top2, low, gap12, spread,
     diagOfTop, diagIsLowest, pairKey, usePair, ex, inv, eiKey,
@@ -226,6 +227,17 @@ function sec(idx, kicker, title, lead, body, cls){
 }
 
 function renderReport(p){
+  /* ── 캠프 모드 ────────────────────────────────────────────
+     both   결합 캠프 — 9섹션 전부
+     career 진로 캠프 — 학습법 상세(03·04·05)를 뺀다
+     study  자기주도학습 캠프 — 진로·로드맵(06·07)을 뺀다
+     번호는 남은 섹션에 다시 매긴다. 「01 02 05」처럼 비어 보이면 안 된다. */
+  const MODE = p.mode || 'both';
+  const SKIP = MODE==='career' ? ['03','04','05']
+             : MODE==='study'  ? ['06','07'] : [];
+  const on = k => !SKIP.includes(k);
+  let _n = 0;
+  const num = () => String(++_n).padStart(2,'0');
   const s=p.scores, A=KB[p.top1], B=KB[p.top2], L=KB[p.low];
   const H=[];
 
@@ -263,7 +275,7 @@ function renderReport(p){
     <p style="margin-bottom:0">네 방식을 두루 쓸 수 있다는 뜻입니다. 다만 <b>다 잘한다는 건 우선순위를 정하기 어렵다는 뜻</b>이기도 합니다.
     이 경우 검사보다 <b>실제로 해봤을 때 덜 지치는 쪽</b>이 더 정확한 기준이 됩니다.</p></div>`;
 
-  H.push(sec('01','Profile','두뇌 프로파일','',pf));
+  if(on('01')) H.push(sec(num(),'Profile','두뇌 프로파일','',pf));
 
   /* ---------- 02 나는 이런 사람 ---------- */
   let who = `<h3 class="blk">${A.ko}(${p.top1}) ${s[p.top1]}점 — ${A.nick}</h3>
@@ -291,7 +303,7 @@ function renderReport(p){
   who += `<h4 class="mini">이 유형이 힘을 내는 자리</h4>
     <ul class="pl">${A.core.map(t=>`<li>${md(t)}</li>`).join('')}</ul>`;
 
-  H.push(sec('02','Identity','나는 이런 사람입니다','', who, 'alt'));
+  if(on('02')) H.push(sec(num(),'Identity','나는 이런 사람입니다','', who, 'alt'));
 
   /* ---------- 03 학습 과학 (다크) ---------- */
   let core = CORE.map(c=>{
@@ -313,7 +325,7 @@ function renderReport(p){
     return t;
   }).join('');
 
-  H.push(sec('03','Learning Science','공부는 이 네 가지로 갑니다',
+  if(on('03')) H.push(sec(num(),'Learning Science','공부는 이 네 가지로 갑니다',
     '이 네 가지는 수백 편의 연구로 검증된 것이고, **유형과 상관없이 모든 학생에게 똑같이 효과가 있습니다.** 여기부터가 실제로 성적을 움직이는 부분입니다.',
     methodCards() + core, 'dark'));
 
@@ -334,7 +346,7 @@ function renderReport(p){
     <table class="t"><tbody>${DAILY.rows.map(r=>`<tr><td class="k">${r[0]}</td><td class="v">${r[1]}</td></tr>`).join('')}</tbody></table>
     <p>${md(DAILY.note)}</p><p class="src">${DAILY.src}</p>`;
 
-  H.push(sec('04','Entry Point',`${en.label}`,
+  if(on('04')) H.push(sec(num(),'Entry Point',`${en.label}`,
     '위 네 가지를 **어떤 모습으로 시작하면 이 학생이 첫 주에 포기하지 않을지**에 대한 제안입니다.',
     entry));
 
@@ -360,7 +372,7 @@ function renderReport(p){
       막아야 할 것보다 <b>가장 높은 영역을 어디에 쓸지</b>를 정하는 게 먼저입니다.</p></div>`;
   }
 
-  H.push(sec('05','Exam Plan','시험 2주 계획표','', exam, 'alt'));
+  if(on('05')) H.push(sec(num(),'Exam Plan','시험 2주 계획표','', exam, 'alt'));
 
   /* ---------- 06 진로 ---------- */
   let car = `<p>아래는 <b>정답 목록이 아니라 탐색을 시작할 지도</b>입니다. 여기 없는 직업이 답일 수도 있습니다.
@@ -391,7 +403,7 @@ function renderReport(p){
   car += `<p class="src">HBTS 결과지의 직업 분류를 참고하되, 학생이 읽기 쉽도록 뿌리깊이가 다시 묶은 것입니다.
     여기 없는 직업도 얼마든지 가능합니다.</p>`;
 
-  H.push(sec('06','Career','진로 방향','', car));
+  if(on('06')) H.push(sec(num(),'Career','진로 방향','', car));
 
   /* ---------- 07 로드맵 ---------- */
   const R=ROADMAP_PRINCIPLE, stage=ROADMAP_STAGE[p.grade], ra=ROADMAP_AREA[p.top1];
@@ -429,7 +441,7 @@ function renderReport(p){
       `<tr><td class="k" style="width:120px">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
     <p class="src">${R.chance.src}</p>`;
 
-  H.push(sec('07','Roadmap','학창시절 로드맵','', road, 'alt'));
+  if(on('07')) H.push(sec(num(),'Roadmap','학창시절 로드맵','', road, 'alt'));
 
   /* ---------- 08 정서 ---------- */
   let emo = `<table class="t"><tbody>
@@ -440,10 +452,10 @@ function renderReport(p){
     어떤 상황에서 이런 마음이 드는지 한 줄로 적어보세요. 적어두면 원인을 찾기가 훨씬 쉬워집니다.</div>`;
   emo += shiftBlock(p);
 
-  H.push(sec('08','State','지금의 마음','', emo));
+  if(on('08')) H.push(sec(num(),'State','지금의 마음','', emo));
 
   /* ---------- 09 이 설계서가 서 있는 자리 ---------- */
-  H.push(sec('09','Method', SCIENCE_NOTE.title, '',
+  if(on('09')) H.push(sec(num(),'Method', SCIENCE_NOTE.title, '',
     SCIENCE_NOTE.body.map(b=>`<p>${md(b)}</p>`).join('') +
     `<p class="src">${SCIENCE_NOTE.src}</p>` +
     `<div class="callout" style="margin-top:26px"><h5>이 자료에 대하여</h5>${md(DISCLAIMER)}</div>`,
@@ -574,6 +586,15 @@ function buildPrompt(p){
   const cb = p.usePair ? COMBO[p.pairKey] : null;
   const en = ENTRY[p.top1];
 
+  /* 캠프 모드에 따라 AI 심화의 무게중심도 옮긴다.
+     진로 캠프인데 공부 계획이 절반을 차지하면 설계서 앞부분과 따로 논다. */
+  const MODE = p.mode || 'both';
+  const modeNote = MODE==='career'
+    ? `\n\n════════ 이번 캠프 ════════\n**진로 캠프**입니다. 설계서 본문에 학습법 상세는 들어가 있지 않습니다.\n「나에게 맞는 공부 설계」는 진로 준비에 필요한 공부(관심 분야 탐색·기록·검증)를 중심으로 짧게 쓰고,\n「진로, 이렇게 좁혀 가세요」를 가장 길고 구체적으로 쓰세요.`
+    : MODE==='study'
+    ? `\n\n════════ 이번 캠프 ════════\n**자기주도학습 캠프**입니다. 설계서 본문에 진로·로드맵 섹션은 들어가 있지 않습니다.\n「나에게 맞는 공부 설계」를 가장 길고 구체적으로 쓰고,\n「진로, 이렇게 좁혀 가세요」는 "지금 공부가 어디로 이어지는가" 정도로 짧게 쓰세요.`
+    : '';
+
   return `당신은 15년 경력의 진로 설계 전문가이자 학습 코치입니다.
 중·고등학생 진로 캠프에서 학생 한 명에게 줄 「나만의 진로·학습 설계서」 본문을 씁니다.
 아래 학생의 실제 HBTS 검사 결과를 읽고, 이 학생 한 명에게만 해당하는 글을 쓰세요.
@@ -642,7 +663,7 @@ ${p.name} 학생이 어떤 사람인지 한 문장. 그 아래 2~3문장으로 �
 그다음 그 방식이 통하는 분야를 묶어서. 마지막에 **앞으로 3개월 안에 해볼 것 3가지**를 구체적으로.
 
 ## ${({'초':'초등','중':'중학','고':'고등'})[p.grade]} 시기에 꼭 해둘 것
-지금 학년에서 해야 할 것을 시기별로. 하지 말아야 할 것도 1가지. 마지막은 격려 한 문장.`;
+지금 학년에서 해야 할 것을 시기별로. 하지 말아야 할 것도 1가지. 마지막은 격려 한 문장.${modeNote}`;
 }
 
 async function runAI(){
@@ -705,3 +726,24 @@ function mdBlock(t){
 }
 
 livePreview();
+
+/* ------------------------------------------------------------------
+   강사용 도구 토글
+   ------------------------------------------------------------------
+   학생이 직접 쓰는 화면이므로 「예시 값 넣기」·「API 키 설정」은 기본으로 숨긴다.
+   강사가 자기 기기에서 한 번 켜두면 그 브라우저는 계속 켜진 상태를 기억한다.
+   주소 뒤에 #teacher 를 붙여도 켜진다.
+------------------------------------------------------------------ */
+function setAdmin(on){
+  document.body.classList.toggle('admin', !!on);
+  const a = document.getElementById('teachToggle');
+  if(a) a.textContent = on ? '강사용 도구 숨기기' : '강사용 도구';
+  try{ localStorage.setItem('hbts_admin', on?'1':'') }catch(e){}
+}
+function toggleAdmin(){ setAdmin(!document.body.classList.contains('admin')); }
+(function(){
+  let on=false;
+  try{ on = localStorage.getItem('hbts_admin')==='1' }catch(e){}
+  if(location.hash === '#teacher') on = true;
+  setAdmin(on);
+})();

@@ -330,6 +330,16 @@ details.opt[open] summary::before{content:'－ '}
 .editing #report{box-shadow:inset 0 0 0 2px var(--gold)}
 
 /* ---------------- 인쇄 ---------------- */
+/* 강사용 도구 — 학생 화면에서는 보이지 않는다.
+   하단 「강사용 도구」를 누르면 켜지고, 그 브라우저에 기억된다. */
+.adminonly{display:none}
+body.admin .adminonly{display:inline}
+.teachlink{margin-top:26px;text-align:right}
+.teachlink a{font-size:12.5px;color:#9A9384;text-decoration:none;letter-spacing:.02em;
+  border-bottom:1px solid transparent;padding-bottom:1px}
+.teachlink a:hover{color:var(--forest);border-bottom-color:var(--rule)}
+body.admin .teachlink a{color:var(--moss)}
+
 @media print{
   body{background:#fff;font-size:10.5pt;line-height:1.62}
   body::before{display:none}
@@ -425,6 +435,15 @@ details.opt[open] summary::before{content:'－ '}
         <option value="초">초등 고학년</option><option value="중" selected>중학생</option><option value="고">고등학생</option>
       </select></div>
     </div>
+    <div style="margin-top:22px">
+      <label>어떤 캠프인가요</label>
+      <select id="mode">
+        <option value="both" selected>진로 + 자기주도학습 (결합 캠프)</option>
+        <option value="career">진로 캠프 — 진로·로드맵 중심</option>
+        <option value="study">자기주도학습 캠프 — 학습법 중심</option>
+      </select>
+      <p class="hint">고른 캠프에 맞춰 설계서에 들어갈 내용이 달라집니다.</p>
+    </div>
   </div>
 
   <div class="fieldset" id="scoreCard">
@@ -450,10 +469,15 @@ details.opt[open] summary::before{content:'－ '}
   </details>
 
   <div class="btnrow c">
-    <button class="btn" onclick="generate()">설계서 만들기</button>
-    <button class="btn ghost" onclick="fillSample()">예시 값 넣기</button>
-    <button class="btn ghost" onclick="openAI('vision')">API 키 설정</button>
+    <button class="btn" onclick="generate()">내 설계서 만들기</button>
+    <span class="adminonly">
+      <button class="btn ghost" onclick="fillSample()">예시 값 넣기</button>
+      <button class="btn ghost" onclick="openAI('vision')">API 키 설정</button>
+    </span>
   </div>
+  <p class="teachlink noprint">
+    <a href="#" onclick="toggleAdmin();return false" id="teachToggle">강사용 도구</a>
+  </p>
 </div>
 </section>
 
