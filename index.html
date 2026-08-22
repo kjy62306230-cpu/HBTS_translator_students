@@ -1847,6 +1847,9 @@ function renderReport(p){
 
   /* ---------- 교사용 ---------- */
   const hiN = p.comp.length ? p.comp.map(a=>`${KB[a].ko}(${a})`).join(' · ') : `${A.ko}(${p.top1})`;
+  /* 교사·학부모용 페이지는 학생이 직접 쓰는 화면에서는 붙지 않는다.
+     강사 모드(하단 「강사용 도구」)를 켰을 때만 설계서 뒤에 붙는다. */
+  if(document.body.classList.contains('admin'))
   H.push(`<div class="teacher"><div class="wrap">
     <span class="tag">교사 · 학부모용 — 학생 배부용 아님</span>
     <h2 style="font-size:29px;font-weight:800;letter-spacing:-.042em;margin-bottom:20px">${p.name==='학생'?'학생':p.name+' 학생'} 지도 가이드</h2>
