@@ -354,6 +354,35 @@ function renderReport(p){
       `<tr><td class="k">${k}</td><td>${md(v)}</td></tr>`).join('')}</tbody></table>
     <p class="src" style="margin-top:12px">${md(TOOLBOX.note)}</p>`;
 
+  /* ★ 내 공부 흐름 — 종이의 핵심. 강사 PPT 는 공통 4기법을 다루고,
+     이 종이는 그 4기법을 이 학생의 형식으로 짠 흐름을 준다. */
+  const fl = FLOW[p.top1];
+  entry += `<h3 class="blk">${fl.day.title}</h3>
+    <p>강사 설명에서 들은 <b>네 가지 기법</b>이 이 흐름 안에 전부 들어 있습니다.
+       달라지는 것은 <b>순서와 형식</b>뿐입니다.</p>
+    <table class="t"><tbody>${fl.day.rows.map(r=>
+      `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+
+    <h3 class="blk">${fl.week.title}</h3>
+    <table class="t"><tbody>${fl.week.rows.map(r=>
+      `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+    <div class="pull" style="margin-top:18px">${md(fl.key)}</div>`;
+
+  /* 도구 전체 지도 — 네 유형을 다 보여주되 내 것만 표시한다 */
+  entry += `<h3 class="blk">${TOOL_MAP.title}</h3>
+    <p>${md(TOOL_MAP.lead)}</p>
+    <table class="t tmap"><thead><tr>
+      <th style="width:112px">유형</th><th>먼저 잡는 도구</th><th style="width:34%">이렇게 시키면 손을 놓습니다</th>
+    </tr></thead><tbody>${ORDER.map(c=>{
+      const mine = (c===p.top1);
+      return `<tr${mine?' class="mine"':''}>
+        <td class="k">${mine?'● ':''}${KB[c].ko}<span class="code">${c}</span></td>
+        <td>${FIRST_TOOLS[c].items.map(x=>x[0]).join(' · ')}</td>
+        <td>${QUIT_RISK[c].items.slice(0,2).join(' · ')} 등</td></tr>`;
+    }).join('')}</tbody></table>
+    <p class="src" style="margin-top:12px">${md(TOOL_MAP.note)}</p>
+    ${notepad('tools', TOOL_MAP.noteTitle, TOOL_MAP.noteLead, '예) 체크리스트로 관리 — 수학 오답노트에 먼저 써보기')}`;
+
   const ei=EI[p.eiKey];
   entry += `<h3 class="blk">외향성 ${p.ex} : 내향성 ${p.inv} — ${ei.title}</h3>
     <p>${md(ei.body)}</p><div class="pull">${md(ei.todo)}</div>`;
@@ -819,3 +848,52 @@ function toggleAdmin(){ setAdmin(!document.body.classList.contains('admin')); }
   if(location.hash === '#teacher') on = true;
   setAdmin(on);
 })();
+
+/* ==================================================================
+   기재 공간 — 활동지 없이 크롬북에서 바로 쓴다
+   ------------------------------------------------------------------
+   이 캠프는 종이 활동지를 없애는 것이 목표다.
+   그래서 설계서 자체가 활동지 역할을 한다.
+   · 클릭하면 바로 써진다 (편집 모드 전환 불필요)
+   · 치는 대로 브라우저에 자동 저장 — 새로고침해도 남는다
+   · 학교 크롬북은 공용일 수 있으므로 「내 기록 지우기」를 함께 둔다
+   ================================================================== */
+function padKey(id){
+  const who = (typeof P!=='undefined' && P && P.name) ? P.name : '학생';
+  return `hbts_pad_${who}_${id}`;
+}
+function notepad(id, title, lead, ph){
+  let saved='';
+  try{ saved = localStorage.getItem(padKey(id)) || '' }catch(e){}
+  return `<div class="notepad" data-pad="${id}">
+    <div class="nph">${title}<span class="npst" id="npst_${id}"></span></div>
+    <p class="npl noprint">${md(lead)}</p>
+    <div class="npbox" id="np_${id}" contenteditable="true" spellcheck="false"
+         data-ph="${ph||'여기에 적으세요'}"
+         oninput="padSave('${id}')">${saved}</div>
+  </div>`;
+}
+let PAD_T = {};
+function padSave(id){
+  const el = $('np_'+id); if(!el) return;
+  const st = $('npst_'+id);
+  if(st) st.textContent = '저장 중…';
+  clearTimeout(PAD_T[id]);
+  PAD_T[id] = setTimeout(()=>{
+    try{ localStorage.setItem(padKey(id), el.innerHTML); if(st) st.textContent='저장됨'; }
+    catch(e){ if(st) st.textContent='저장 안 됨 — 인쇄해 두세요'; }
+    setTimeout(()=>{ if(st && st.textContent==='저장됨') st.textContent=''; }, 2200);
+  }, 400);
+}
+function padClearAll(){
+  const pads = document.querySelectorAll('#report .npbox');
+  if(!pads.length) return;
+  document.querySelectorAll('#report .notepad').forEach(n=>{
+    const id = n.getAttribute('data-pad');
+    try{ localStorage.removeItem(padKey(id)) }catch(e){}
+    const b = $('np_'+id); if(b) b.innerHTML='';
+  });
+  const s = $('padMsg');
+  if(s) s.textContent = '내가 쓴 내용을 지웠습니다.';
+  setTimeout(()=>{ if(s) s.textContent=''; }, 3000);
+}

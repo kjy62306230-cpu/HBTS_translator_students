@@ -340,6 +340,40 @@ body.admin .adminonly{display:inline}
 .teachlink a:hover{color:var(--forest);border-bottom-color:var(--rule)}
 body.admin .teachlink a{color:var(--moss)}
 
+/* 도구 전체 지도 — 내 유형 행만 도드라지게 */
+table.tmap thead th{font-size:12px;letter-spacing:.02em;color:#8A847A;text-align:left;
+  font-weight:600;padding:8px 12px;border-bottom:1px solid var(--rule)}
+table.tmap td{font-size:14px;vertical-align:top}
+table.tmap tr.mine{background:rgba(46,125,91,.075)}
+table.tmap tr.mine td{font-weight:600;color:var(--forest)}
+section.dark table.tmap tr.mine{background:rgba(180,210,190,.13)}
+section.dark table.tmap tr.mine td{color:#EAF1EC}
+section.dark table.tmap thead th{color:rgba(244,241,234,.5);border-bottom-color:rgba(244,241,234,.2)}
+
+/* 2차시 필기 공간 — 강의를 들으며 학생이 직접 채운다 */
+.notepad{margin-top:26px;border:1px solid var(--rule);border-radius:3px;padding:20px 22px 24px;
+  background:rgba(255,255,255,.45)}
+.nph{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--moss);
+  font-weight:700;margin-bottom:8px}
+.npl{font-size:13.5px;color:#6E675C;margin:0 0 16px}
+.npst{float:right;font-size:10.5px;letter-spacing:.06em;color:#9A9384;font-weight:500;text-transform:none}
+.npbox{min-height:140px;border:1px dashed var(--rule);border-radius:3px;padding:14px 16px;
+  font-size:15px;line-height:1.9;color:var(--ink);outline:none;background:rgba(255,255,255,.6);
+  white-space:pre-wrap}
+.npbox:hover{border-color:var(--moss)}
+.npbox:focus{border-style:solid;border-color:var(--moss);background:#fff;
+  box-shadow:0 0 0 3px rgba(46,125,91,.10)}
+.npbox:empty::before{content:attr(data-ph);color:#B3ADA0}
+section.dark .npbox{background:rgba(244,241,234,.06);color:#F4F1EA;border-color:rgba(244,241,234,.3)}
+section.dark .npbox:focus{background:rgba(244,241,234,.11);border-color:#9FC7AF;
+  box-shadow:0 0 0 3px rgba(159,199,175,.16)}
+section.dark .npbox:empty::before{color:rgba(244,241,234,.4)}
+section.dark .npst{color:rgba(244,241,234,.5)}
+section.dark .notepad{border-color:rgba(244,241,234,.28);background:rgba(244,241,234,.05)}
+section.dark .nph{color:#9FC7AF}
+section.dark .npl{color:rgba(244,241,234,.6)}
+section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
+
 @media print{
   body{background:#fff;font-size:10.5pt;line-height:1.62}
   body::before{display:none}
@@ -364,6 +398,11 @@ body.admin .teachlink a{color:var(--moss)}
   /* 교사용 마지막 목록 한 줄이 다음 장으로 넘어가지 않게 */
   .teacher ul.pl{break-inside:avoid}
   .teacher p.src{break-before:avoid}
+  .notepad{break-inside:avoid;background:transparent}
+  /* 안 쓴 칸은 인쇄할 때 손으로 쓸 수 있게 줄만 남긴다 */
+  .npbox{border-style:solid;border-color:#D6CFC0;background:transparent;min-height:120px}
+  .npbox:empty::before{content:''}
+  .npst{display:none}
   .callout,.pull,.warnbox,.mission,.geo,.mcard,.entry,
   .vz,.vzb,.vzbars,.tlx,.profile,.scores,.tags,.step li,
   figure,tr,li{break-inside:avoid}
@@ -489,6 +528,8 @@ body.admin .teachlink a{color:var(--moss)}
       <button class="btn ghost" onclick="window.print()">PDF로 저장 · 인쇄</button>
       <button class="btn ghost" onclick="toggleEdit()">직접 고치기</button>
       <button class="btn ghost" onclick="backToInput()">점수 수정</button>
+      <button class="btn ghost" onclick="padClearAll()">내가 쓴 내용 지우기</button>
+      <span id="padMsg" class="hint" style="margin-left:6px"></span>
     </div>
   </div>
   <div id="report"></div>

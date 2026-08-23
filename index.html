@@ -340,6 +340,40 @@ body.admin .adminonly{display:inline}
 .teachlink a:hover{color:var(--forest);border-bottom-color:var(--rule)}
 body.admin .teachlink a{color:var(--moss)}
 
+/* 도구 전체 지도 — 내 유형 행만 도드라지게 */
+table.tmap thead th{font-size:12px;letter-spacing:.02em;color:#8A847A;text-align:left;
+  font-weight:600;padding:8px 12px;border-bottom:1px solid var(--rule)}
+table.tmap td{font-size:14px;vertical-align:top}
+table.tmap tr.mine{background:rgba(46,125,91,.075)}
+table.tmap tr.mine td{font-weight:600;color:var(--forest)}
+section.dark table.tmap tr.mine{background:rgba(180,210,190,.13)}
+section.dark table.tmap tr.mine td{color:#EAF1EC}
+section.dark table.tmap thead th{color:rgba(244,241,234,.5);border-bottom-color:rgba(244,241,234,.2)}
+
+/* 2차시 필기 공간 — 강의를 들으며 학생이 직접 채운다 */
+.notepad{margin-top:26px;border:1px solid var(--rule);border-radius:3px;padding:20px 22px 24px;
+  background:rgba(255,255,255,.45)}
+.nph{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--moss);
+  font-weight:700;margin-bottom:8px}
+.npl{font-size:13.5px;color:#6E675C;margin:0 0 16px}
+.npst{float:right;font-size:10.5px;letter-spacing:.06em;color:#9A9384;font-weight:500;text-transform:none}
+.npbox{min-height:140px;border:1px dashed var(--rule);border-radius:3px;padding:14px 16px;
+  font-size:15px;line-height:1.9;color:var(--ink);outline:none;background:rgba(255,255,255,.6);
+  white-space:pre-wrap}
+.npbox:hover{border-color:var(--moss)}
+.npbox:focus{border-style:solid;border-color:var(--moss);background:#fff;
+  box-shadow:0 0 0 3px rgba(46,125,91,.10)}
+.npbox:empty::before{content:attr(data-ph);color:#B3ADA0}
+section.dark .npbox{background:rgba(244,241,234,.06);color:#F4F1EA;border-color:rgba(244,241,234,.3)}
+section.dark .npbox:focus{background:rgba(244,241,234,.11);border-color:#9FC7AF;
+  box-shadow:0 0 0 3px rgba(159,199,175,.16)}
+section.dark .npbox:empty::before{color:rgba(244,241,234,.4)}
+section.dark .npst{color:rgba(244,241,234,.5)}
+section.dark .notepad{border-color:rgba(244,241,234,.28);background:rgba(244,241,234,.05)}
+section.dark .nph{color:#9FC7AF}
+section.dark .npl{color:rgba(244,241,234,.6)}
+section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
+
 @media print{
   body{background:#fff;font-size:10.5pt;line-height:1.62}
   body::before{display:none}
@@ -364,6 +398,11 @@ body.admin .teachlink a{color:var(--moss)}
   /* 교사용 마지막 목록 한 줄이 다음 장으로 넘어가지 않게 */
   .teacher ul.pl{break-inside:avoid}
   .teacher p.src{break-before:avoid}
+  .notepad{break-inside:avoid;background:transparent}
+  /* 안 쓴 칸은 인쇄할 때 손으로 쓸 수 있게 줄만 남긴다 */
+  .npbox{border-style:solid;border-color:#D6CFC0;background:transparent;min-height:120px}
+  .npbox:empty::before{content:''}
+  .npst{display:none}
   .callout,.pull,.warnbox,.mission,.geo,.mcard,.entry,
   .vz,.vzb,.vzbars,.tlx,.profile,.scores,.tags,.step li,
   figure,tr,li{break-inside:avoid}
@@ -489,6 +528,8 @@ body.admin .teachlink a{color:var(--moss)}
       <button class="btn ghost" onclick="window.print()">PDF로 저장 · 인쇄</button>
       <button class="btn ghost" onclick="toggleEdit()">직접 고치기</button>
       <button class="btn ghost" onclick="backToInput()">점수 수정</button>
+      <button class="btn ghost" onclick="padClearAll()">내가 쓴 내용 지우기</button>
+      <span id="padMsg" class="hint" style="margin-left:6px"></span>
     </div>
   </div>
   <div id="report"></div>
@@ -1277,12 +1318,104 @@ const SOLO = {
     body:'외향과 내향이 **비슷한 수준**입니다. 새로 배우는 단원은 혼자, 정리·점검은 사람과 함께 하는 식으로 나누면 잘 맞습니다.' }
 };
 
+/* ------------------------------------------------------------------
+   도구 전체 지도 — 학생을 자기 유형에 가두지 않기 위한 장치
+   ------------------------------------------------------------------
+   네 유형의 도구를 한 표에 전부 보여주고, 내 것만 표시한다.
+   「내 것이 먼저」이되 「나머지도 열려 있다」를 동시에 말하기 위해서다.
+   검사 도구가 낙인이 되는 것을 막는 것이 이 표의 목적이다.
+------------------------------------------------------------------ */
+const TOOL_MAP = {
+  title:'도구 전체 지도',
+  lead:'네 유형이 **먼저 잡는 도구**를 전부 적었습니다. ●가 이 학생의 자리입니다.\n**나머지도 다 써도 됩니다.** 어느 것이 더 좋은 방법이라서 나뉜 게 아니라, **어느 것에 먼저 손이 가느냐**가 다를 뿐입니다.',
+  noteTitle:'내가 써볼 것',
+  noteLead:'강사 설명을 들으며 **여기에 직접 적으세요.** 클릭하면 바로 써집니다. 쓰는 대로 자동 저장되니 창을 닫아도 남습니다.',
+  note:'실제로 과목마다 잘 맞는 도구가 다릅니다. 수학은 구조도, 국어는 이야기로 엮기, 영단어는 이미지 연상 — 이런 식으로 **섞어 쓰는 학생이 결국 가장 멀리 갑니다.**'
+};
+
 function paceKey(p){
   if(p.wpos==null || p.wneg==null) return null;
   if(p.wpos <  p.wneg) return 'hard';
   if(p.wpos === p.wneg) return 'mid';
   return 'ok';
 }
+
+/* ==================================================================
+   유형별 공부 흐름 — 결과지에 들어가는 핵심
+   ------------------------------------------------------------------
+   역할 분담
+     강사 PPT  검증된 4기법을 전체에게 소개 (공통)
+     이 종이   그 4기법을 **내 형식으로 짠 하루·한 주 흐름** (개인화)
+
+   4기법(꺼내기·나눠서·설명하기·섞어서)은 네 유형 모두 같이 들어간다.
+   다른 것은 **순서·형식·시간 배분**뿐이다. 여기서 유형을 벗어나지 않는다.
+   ================================================================== */
+const FLOW = {
+LAB:{
+  day:{ title:'하루 흐름 — 60분 기준', rows:[
+    ['5분',  '**어제 것 먼저 꺼내기.** 교재 덮고 백지에 「어제 배운 원리 하나」를 씁니다. 못 쓰면 그 자리에 빨간 별.'],
+    ['25분', '**새 내용 — 개념 → 원리 → 적용 순서로.** 「왜 이렇게 되는가」에 답이 안 되면 다음으로 넘어가지 않습니다.'],
+    ['15분', '**문제 풀이.** 틀린 것마다 원인을 한 문장으로. 「실수」는 원인이 아닙니다 — 「분모를 안 봤다」처럼 씁니다.'],
+    ['10분', '**오늘 것 꺼내기.** 다시 백지. 개념 이름만 보고 설명을 복원합니다.'],
+    ['5분',  '**내일 확인할 빨간 별 항목**을 옮겨 적습니다.']
+  ]},
+  week:{ title:'한 주 배치', rows:[
+    ['월·수·금','새 단원 진도 + 그날 꺼내기'],
+    ['화·목','**전날 것 복습.** 수업 직후보다 하루 뒤가 낫습니다.'],
+    ['토','**섞어서 풀기.** 이번 주 단원을 한꺼번에 섞은 문제 15개. 단원별로 몰아 풀지 않습니다.'],
+    ['일','빨간 별만 · 30분. 다 지웠으면 쉽니다.']
+  ]},
+  key:'이 학생에게 가장 중요한 한 줄 — **이유를 납득하기 전에는 진도를 나가지 마세요.** 억지로 넘기면 그 단원은 통째로 비어버립니다.'
+},
+LPB:{
+  day:{ title:'하루 흐름 — 60분 기준', rows:[
+    ['5분',  '**오늘 할 덩어리를 먼저 적습니다.** 3개면 3개. 다 하면 하나씩 지웁니다. 지우는 게 이 학생의 연료입니다.'],
+    ['10분', '**어제 것 꺼내기.** 체크리스트를 보지 말고 먼저 떠올린 뒤에 확인합니다.'],
+    ['25분', '**새 내용 — 구조화 노트로.** 표·번호·단계 형식을 고정해두면 매번 시작이 빠릅니다.'],
+    ['15분', '**문제 풀이 — 같은 유형으로 묶어서.** 익숙해진 다음 주부터 섞습니다.'],
+    ['5분',  '**내일 할 3개를 미리 적어둡니다.** 내일 아침에 정하지 않아도 되게 만드는 것이 핵심입니다.']
+  ]},
+  week:{ title:'한 주 배치', rows:[
+    ['요일 고정','**「화요일 7시 = 수학」처럼 요일과 시간을 박아둡니다.** 매번 정하면 이 학생은 시작을 미룹니다.'],
+    ['월~금','하루 3덩어리. 넘치는 날이 있어도 늘리지 않습니다.'],
+    ['토','**섞어서 풀기.** 이번 주 단원을 섞은 문제 15개. 처음엔 어색해도 2주만 버티면 익숙해집니다.'],
+    ['일','**한 주 점검 — 지운 항목 세어보기.** 숫자가 보이면 다음 주가 쉬워집니다.']
+  ]},
+  key:'이 학생에게 가장 중요한 한 줄 — **양을 늘리는 것보다 빠뜨리지 않는 것이 낫습니다.** 하루 20분이라도 끊기지 않는 쪽이 결국 이깁니다.'
+},
+RAB:{
+  day:{ title:'하루 흐름 — 25분씩 두 번', rows:[
+    ['3분',  '**어제 것 그림으로 꺼내기.** 글이 아니라 도식·화살표로. 손이 먼저 움직입니다.'],
+    ['22분', '**새 내용 — 전체 지도부터.** 단원 전체를 한 장에 그린 다음 세부로 들어갑니다. 순서를 거꾸로 하면 흥미가 먼저 끊깁니다.'],
+    ['5분',  '**쉽니다.** 이 학생에게 쉬는 시간은 게으름이 아니라 다음 25분의 조건입니다.'],
+    ['22분', '**문제 풀이 — 유형을 색으로 구분해두고 섞어서.** 시각적으로 갈라져 있으면 섞여 있어도 덜 혼란스럽습니다.'],
+    ['3분',  '**오늘 그린 것 한 장을 사진으로** 남깁니다. 다시 그리는 것보다 빠릅니다.']
+  ]},
+  week:{ title:'한 주 배치', rows:[
+    ['월~금','**하루 두 세트(50분).** 한 번에 오래 앉는 형태는 이 학생에게 작동하지 않습니다.'],
+    ['순서 선택','**어느 과목을 먼저 할지는 본인이 고르게 하세요.** 선택권 하나만 있어도 이탈이 크게 줍니다.'],
+    ['토','**만들어보기.** 이번 주 배운 것으로 한 장짜리 정리물·발표자료를 만듭니다. 결과물이 있으면 남습니다.'],
+    ['일','쉽니다. 이 학생은 쉬어야 다음 주가 굴러갑니다.']
+  ]},
+  key:'이 학생에게 가장 중요한 한 줄 — **오래 앉히지 마세요.** 25분씩 두 번이 90분 한 번보다 확실히 낫습니다.'
+},
+RPB:{
+  day:{ title:'하루 흐름 — 60분 기준', rows:[
+    ['5분',  '**지금 기분을 한 줄로 적고 시작합니다.** 마음이 시끄러우면 집중이 안 걸리는 학생입니다. 적어두면 가라앉습니다.'],
+    ['10분', '**어제 것을 소리 내어 설명.** 듣는 사람이 없어도 됩니다 — 인형이나 빈 의자, 녹음도 같은 효과입니다.'],
+    ['25분', '**새 내용 — 사람·상황과 연결하며.** 「이건 누구 이야기 같다」가 붙으면 오래 남습니다.'],
+    ['15분', '**문제 풀이.** 틀린 것은 「내가 이걸 누구에게 설명한다면 어디서 막힐까」로 다시 봅니다.'],
+    ['5분',  '**오늘 잘한 것 한 줄.** 이 학생에게는 이게 다음 날의 연료입니다.']
+  ]},
+  week:{ title:'한 주 배치', rows:[
+    ['월~금','하루 60분. 혼자 하는 시간이 기본입니다.'],
+    ['주 1~2회','**같이 공부하는 자리.** 단, 서로 가르치는 형태여야 합니다. 옆에 앉아만 있으면 시간만 갑니다.'],
+    ['토','**섞어서 풀기** 15문제 + 이번 주 배운 것 중 하나를 누군가에게 설명하기.'],
+    ['일','**한 주 돌아보기 세 줄.** 잘된 것 / 막힌 것 / 다음 주에 바꿀 것.']
+  ]},
+  key:'이 학생에게 가장 중요한 한 줄 — **비교하지 마세요.** 다른 사람과 견주는 순간 이 학생의 집중은 끊깁니다.'
+}
+};
 
 /* ===== roadmap.js ===== */
 /* ==================================================================
@@ -1868,6 +2001,35 @@ function renderReport(p){
       `<tr><td class="k">${k}</td><td>${md(v)}</td></tr>`).join('')}</tbody></table>
     <p class="src" style="margin-top:12px">${md(TOOLBOX.note)}</p>`;
 
+  /* ★ 내 공부 흐름 — 종이의 핵심. 강사 PPT 는 공통 4기법을 다루고,
+     이 종이는 그 4기법을 이 학생의 형식으로 짠 흐름을 준다. */
+  const fl = FLOW[p.top1];
+  entry += `<h3 class="blk">${fl.day.title}</h3>
+    <p>강사 설명에서 들은 <b>네 가지 기법</b>이 이 흐름 안에 전부 들어 있습니다.
+       달라지는 것은 <b>순서와 형식</b>뿐입니다.</p>
+    <table class="t"><tbody>${fl.day.rows.map(r=>
+      `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+
+    <h3 class="blk">${fl.week.title}</h3>
+    <table class="t"><tbody>${fl.week.rows.map(r=>
+      `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+    <div class="pull" style="margin-top:18px">${md(fl.key)}</div>`;
+
+  /* 도구 전체 지도 — 네 유형을 다 보여주되 내 것만 표시한다 */
+  entry += `<h3 class="blk">${TOOL_MAP.title}</h3>
+    <p>${md(TOOL_MAP.lead)}</p>
+    <table class="t tmap"><thead><tr>
+      <th style="width:112px">유형</th><th>먼저 잡는 도구</th><th style="width:34%">이렇게 시키면 손을 놓습니다</th>
+    </tr></thead><tbody>${ORDER.map(c=>{
+      const mine = (c===p.top1);
+      return `<tr${mine?' class="mine"':''}>
+        <td class="k">${mine?'● ':''}${KB[c].ko}<span class="code">${c}</span></td>
+        <td>${FIRST_TOOLS[c].items.map(x=>x[0]).join(' · ')}</td>
+        <td>${QUIT_RISK[c].items.slice(0,2).join(' · ')} 등</td></tr>`;
+    }).join('')}</tbody></table>
+    <p class="src" style="margin-top:12px">${md(TOOL_MAP.note)}</p>
+    ${notepad('tools', TOOL_MAP.noteTitle, TOOL_MAP.noteLead, '예) 체크리스트로 관리 — 수학 오답노트에 먼저 써보기')}`;
+
   const ei=EI[p.eiKey];
   entry += `<h3 class="blk">외향성 ${p.ex} : 내향성 ${p.inv} — ${ei.title}</h3>
     <p>${md(ei.body)}</p><div class="pull">${md(ei.todo)}</div>`;
@@ -2333,6 +2495,55 @@ function toggleAdmin(){ setAdmin(!document.body.classList.contains('admin')); }
   if(location.hash === '#teacher') on = true;
   setAdmin(on);
 })();
+
+/* ==================================================================
+   기재 공간 — 활동지 없이 크롬북에서 바로 쓴다
+   ------------------------------------------------------------------
+   이 캠프는 종이 활동지를 없애는 것이 목표다.
+   그래서 설계서 자체가 활동지 역할을 한다.
+   · 클릭하면 바로 써진다 (편집 모드 전환 불필요)
+   · 치는 대로 브라우저에 자동 저장 — 새로고침해도 남는다
+   · 학교 크롬북은 공용일 수 있으므로 「내 기록 지우기」를 함께 둔다
+   ================================================================== */
+function padKey(id){
+  const who = (typeof P!=='undefined' && P && P.name) ? P.name : '학생';
+  return `hbts_pad_${who}_${id}`;
+}
+function notepad(id, title, lead, ph){
+  let saved='';
+  try{ saved = localStorage.getItem(padKey(id)) || '' }catch(e){}
+  return `<div class="notepad" data-pad="${id}">
+    <div class="nph">${title}<span class="npst" id="npst_${id}"></span></div>
+    <p class="npl noprint">${md(lead)}</p>
+    <div class="npbox" id="np_${id}" contenteditable="true" spellcheck="false"
+         data-ph="${ph||'여기에 적으세요'}"
+         oninput="padSave('${id}')">${saved}</div>
+  </div>`;
+}
+let PAD_T = {};
+function padSave(id){
+  const el = $('np_'+id); if(!el) return;
+  const st = $('npst_'+id);
+  if(st) st.textContent = '저장 중…';
+  clearTimeout(PAD_T[id]);
+  PAD_T[id] = setTimeout(()=>{
+    try{ localStorage.setItem(padKey(id), el.innerHTML); if(st) st.textContent='저장됨'; }
+    catch(e){ if(st) st.textContent='저장 안 됨 — 인쇄해 두세요'; }
+    setTimeout(()=>{ if(st && st.textContent==='저장됨') st.textContent=''; }, 2200);
+  }, 400);
+}
+function padClearAll(){
+  const pads = document.querySelectorAll('#report .npbox');
+  if(!pads.length) return;
+  document.querySelectorAll('#report .notepad').forEach(n=>{
+    const id = n.getAttribute('data-pad');
+    try{ localStorage.removeItem(padKey(id)) }catch(e){}
+    const b = $('np_'+id); if(b) b.innerHTML='';
+  });
+  const s = $('padMsg');
+  if(s) s.textContent = '내가 쓴 내용을 지웠습니다.';
+  setTimeout(()=>{ if(s) s.textContent=''; }, 3000);
+}
 
 /* ===== verify.js ===== */
 /* ==================================================================
