@@ -84,18 +84,8 @@ async function handlePdf(file){
     const isScan = (totalChars < 300);
 
     if(!adult || isScan){
-      const key = getKey();
-      if(!key){
-        setStatus(`<b>이 결과지는 글자가 전부 이미지로 되어 있습니다.</b>
-          (브라우저에서 인쇄→PDF로 저장하면 이렇게 됩니다.)<br>
-          텍스트를 뽑을 수 없어 <b>AI가 페이지를 직접 읽어야 합니다.</b>
-          API 키를 넣어주시면 이름·점수·비율을 전부 읽어옵니다.`, 'warnst');
-        PDFDOC = doc; PDFALL = pages;
-        openAI('scan');
-        return;
-      }
       PDFDOC = doc; PDFALL = pages;
-      await runScan(key);
+      await runScan();
       return;
     }
 
@@ -111,22 +101,15 @@ async function handlePdf(file){
     const meta = parseMeta(adult.c, child?child.c:null);
     applyMeta(meta);
 
-    /* 2) 점수는 Vision */
-    const key = getKey();
-    if(key){
-      setStatus('그래프에서 점수를 읽는 중… <span class="spin"></span>');
-      try{
-        const sc = await readScores(key, adultImg, childImg);
-        applyScores(sc);
-        const chk = sc.adult ? await geoCheck(adultImg, sc.adult, 'red') : null;
-        showConfirm(meta, sc, true, null, chk);
-      }catch(e){
-        showConfirm(meta, null, false, String(e.message||e));
-      }
-    } else {
-      /* 키가 없으면 떠넘기지 말고, 그 자리에서 한 번만 받는다 */
-      showConfirm(meta, null, false, 'nokey');
-      openAI('vision');
+    /* 2) 점수는 Vision — 키는 필요 없다 (서버가 대신 부른다) */
+    setStatus('그래프에서 점수를 읽는 중… <span class="spin"></span>');
+    try{
+      const sc = await readScores(adultImg, childImg);
+      applyScores(sc);
+      const chk = sc.adult ? await geoCheck(adultImg, sc.adult, 'red') : null;
+      showConfirm(meta, sc, true, null, chk);
+    }catch(e){
+      showConfirm(meta, null, false, String(e.message||e));
     }
   }catch(e){
     setStatus('PDF를 읽지 못했습니다. ('+String(e.message||e)+') 아래에 직접 입력하셔도 됩니다.','err');
@@ -208,7 +191,7 @@ function applyScores(sc){
 }
 
 /* ---------- Vision 판독 ---------- */
-async function readScores(key, adultImg, childImg){
+async function readScores(adultImg, childImg){
   const model = ($('apiModel') && $('apiModel').value.trim()) || AI_MODEL_DEFAULT;
   const content = [];
 
@@ -249,12 +232,7 @@ async function readScores(key, adultImg, childImg){
 
 {"adult":{"LAB":숫자,"RAB":숫자,"LPB":숫자,"RPB":숫자},"child":${childImg?'{"LAB":숫자,"RAB":숫자,"LPB":숫자,"RPB":숫자}':'null'}}`});
 
-  const r = await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'content-type':'application/json','x-api-key':key,
-             'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body: JSON.stringify({ model, max_tokens:500, messages:[{role:'user', content}] })
-  });
+  const r = await aiFetch({ model, max_tokens:500, messages:[{role:'user', content}] });
   const j = await r.json();
   if(!r.ok) throw new Error(j?.error?.message || ('HTTP '+r.status));
 
@@ -344,7 +322,7 @@ async function retryVision(){
   if(!PDFPAGES){ setStatus('먼저 결과지 PDF를 올려주세요.','err'); return; }
   setStatus('결과지 그래프에서 점수를 읽는 중… <span class="spin"></span>');
   try{
-    const sc = await readScores(getKey(), PDFPAGES.adult.img, PDFPAGES.child?PDFPAGES.child.img:null);
+    const sc = await readScores(PDFPAGES.adult.img, PDFPAGES.child?PDFPAGES.child.img:null);
     applyScores(sc);
     const chk = sc.adult ? await geoCheck(PDFPAGES.adult.img, sc.adult, 'red') : null;
     showConfirm(PDFMETA||{}, sc, true, null, chk);
@@ -376,7 +354,7 @@ function applyGeoFix(area, val){
    ================================================================== */
 const SCAN_MAX_PAGES = 8;
 
-async function runScan(key){
+async function runScan(){
   if(!PDFDOC || !PDFALL){ setStatus('먼저 결과지 PDF를 올려주세요.','err'); return; }
   const model = ($('apiModel') && $('apiModel').value.trim()) || AI_MODEL_DEFAULT;
   const n = Math.min(SCAN_MAX_PAGES, PDFDOC.numPages);
@@ -436,12 +414,7 @@ async function runScan(key){
  "child": {"LAB":숫자,"RAB":숫자,"LPB":숫자,"RPB":숫자} 또는 null
 }`});
 
-    const r = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'content-type':'application/json','x-api-key':key,
-        'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({ model, max_tokens:1200, messages:[{role:'user',content}] })
-    });
+    const r = await aiFetch({ model, max_tokens:1200, messages:[{role:'user',content}] });
     const j = await r.json();
     if(!r.ok) throw new Error(j?.error?.message || ('HTTP '+r.status));
     const txt=(j.content||[]).map(c=>c.text||'').join('');
@@ -500,7 +473,7 @@ async function runScan(key){
       <div style="margin-top:10px">
         <button class="btn sm" onclick="clearKey()">키 지우고 새로 넣기</button>
         <button class="btn sm ghost" onclick="apiSelfTest()">연결 테스트</button>
-        <button class="btn sm ghost" onclick="openAI('scan')">다시 시도</button>
+        <button class="btn sm ghost" onclick="runScan()">다시 시도</button>
       </div>`, 'err');
   }
 }
@@ -514,25 +487,19 @@ async function runScan(key){
              (광고·추적 차단 확장, 회사·학교 방화벽, 백신의 웹 보호 기능)
 ------------------------------------------------------------------ */
 async function apiSelfTest(){
-  const key = getKey();
-  if(!key){ setStatus('API 키가 저장돼 있지 않습니다. 먼저 키를 넣어주세요.','warnst'); return; }
   const model = ($('apiModel') && $('apiModel').value.trim()) || AI_MODEL_DEFAULT;
-  setStatus('연결을 확인하는 중… <span class="spin"></span>');
+  const via = getKey() ? '개인 키' : '뿌리깊이 서버';
+  setStatus(`연결을 확인하는 중… (${via}) <span class="spin"></span>`);
   try{
-    const r = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'content-type':'application/json','x-api-key':key,
-        'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({ model, max_tokens:8, messages:[{role:'user',content:'1+1은?'}] })
-    });
+    const r = await aiFetch({ model, max_tokens:8, messages:[{role:'user',content:'1+1은?'}] });
     const j = await r.json().catch(()=>({}));
     if(r.ok){
       setStatus(`<b>통신은 정상입니다.</b> 키·크레딧 모두 살아 있습니다.<br>
         앞의 실패는 <b>보내는 이미지가 너무 컸던 것</b>으로 보입니다.
-        <div style="margin-top:10px"><button class="btn sm" onclick="openAI('scan')">다시 판독</button></div>`, 'okst');
+        <div style="margin-top:10px"><button class="btn sm" onclick="runScan()">다시 판독</button></div>`, 'okst');
     } else {
       setStatus(`<b>통신은 정상입니다.</b> 서버가 거절했습니다 — HTTP ${r.status} ${j?.error?.message||''}<br>
-        저장된 키: <code>${maskKey(key)}</code><br>
+        경로: <b>${getKey()?'개인 키':'뿌리깊이 서버'}</b>${getKey()?` · <code>${maskKey(getKey())}</code>`:''}<br>
         ${/invalid x-api-key|authentication/i.test(j?.error?.message||'')
           ? `이 키는 <b>존재하지 않는 키</b>입니다. 키 전체는 <b>만들 때 딱 한 번만</b> 보이므로,
              목록 화면에서 복사하면 가운데가 잘린 값이 들어갑니다.

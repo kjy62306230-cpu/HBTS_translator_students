@@ -558,6 +558,39 @@ function maskKey(k){ return k ? k.slice(0,14)+'…'+k.slice(-4)+` (${k.length}�
 
 function getKey(){ let k=''; try{k=localStorage.getItem('hbts_api_key')||''}catch(e){} return cleanKey(k||window.__hbtsKey||''); }
 function setKey(k){ k=cleanKey(k); window.__hbtsKey=k; try{localStorage.setItem('hbts_api_key',k)}catch(e){} }
+/* ------------------------------------------------------------------
+   AI 호출 창구 — 여기 한 곳만 거친다
+   ------------------------------------------------------------------
+   학생은 키가 없습니다. 그래서 기본은 「우리 서버(프록시)」로 보냅니다.
+   키는 서버에만 있고 브라우저로는 내려오지 않습니다.
+
+   강사가 자기 키를 넣어둔 경우에는 그 키로 직접 보냅니다.
+   (프록시 하루 한도와 무관하게 쓰고 싶을 때)
+------------------------------------------------------------------ */
+const AI_PROXY_URL = 'https://cqzqtjpukvalhwsqjpcg.supabase.co/functions/v1/ai';
+const AI_PROXY_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxenF0anB1a3ZhbGh3c3FqcGNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTg1NzQsImV4cCI6MjA5MDk3NDU3NH0.VFxV-j8GYt-vmf7gkBO0l6y0H1dtpIKtSN3r5YsobP0';
+
+async function aiFetch(body){
+  const key = getKey();
+  if(key){
+    /* 강사가 넣어둔 개인 키로 직접 */
+    return fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'content-type':'application/json','x-api-key':key,
+        'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify(body)
+    });
+  }
+  /* 기본 — 키 없이 우리 서버를 거친다 */
+  return fetch(AI_PROXY_URL,{
+    method:'POST',
+    headers:{'content-type':'application/json',
+      'apikey': AI_PROXY_ANON,
+      'Authorization': 'Bearer '+AI_PROXY_ANON},
+    body: JSON.stringify(body)
+  });
+}
+
 function clearKey(){ window.__hbtsKey=''; try{localStorage.removeItem('hbts_api_key')}catch(e){} openAI(AI_MODE||'scan'); }
 
 function openAI(mode){
@@ -669,15 +702,20 @@ ${p.name} 학생이 어떤 사람인지 한 문장. 그 아래 2~3문장으로 �
 지금 학년에서 해야 할 것을 시기별로. 하지 말아야 할 것도 1가지. 마지막은 격려 한 문장.${modeNote}`;
 }
 
+/* 모달에서 「저장」을 눌렀을 때 — 강사가 개인 키를 넣는 경로 */
 async function runAI(){
   const key=cleanKey($('apiKey').value);
-  const model=$('apiModel').value.trim()||AI_MODEL_DEFAULT;
   const bad = keyProblem(key);
   if(bad){ $('aiMsg').innerHTML = bad; return; }
   setKey(key); closeAI();
-  if(AI_MODE==='scan'){ await runScan(key); return; }
+  if(AI_MODE==='scan'){ await runScan(); return; }
   if(AI_MODE==='vision'){ await retryVision(); return; }
+  await startDeep();
+}
 
+/* ★ 학생이 누르는 「AI 심화 설계 추가」 — 키를 묻지 않는다 */
+async function startDeep(){
+  const model=($('apiModel')&&$('apiModel').value.trim())||AI_MODEL_DEFAULT;
   const slot=$('aiSlot');
   slot.innerHTML=`<section class="sec"><div class="wrap">
     <div class="sechead"><div class="idx">★</div><div><div class="kicker">AI Analysis</div>
@@ -686,12 +724,7 @@ async function runAI(){
   slot.scrollIntoView({behavior:'smooth',block:'center'});
 
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'content-type':'application/json','x-api-key':key,
-        'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model,max_tokens:4500,messages:[{role:'user',content:buildPrompt(P)}]})
-    });
+    const r=await aiFetch({model,max_tokens:4000,messages:[{role:'user',content:buildPrompt(P)}]});
     const j=await r.json();
     if(!r.ok) throw new Error(j?.error?.message||('HTTP '+r.status));
     const text=(j.content||[]).map(c=>c.text||'').join('');
@@ -700,15 +733,15 @@ async function runAI(){
       <h2>${P.name} 학생 전용 설계</h2></div></div>
       ${mdBlock(text)}
       <p class="src" style="margin-top:26px">검사 결과를 바탕으로 생성된 해석입니다. 다르다고 느끼는 문장은 「직접 고치기」로 수정하세요.</p>
-      <div class="btnrow noprint"><button class="btn ghost" style="color:#F4F1EA;border-color:rgba(244,241,234,.5)" onclick="openAI('deep')">다시 생성</button></div>
+      <div class="btnrow noprint"><button class="btn ghost" style="color:#F4F1EA;border-color:rgba(244,241,234,.5)" onclick="startDeep()">다시 생성</button></div>
     </div></section>`;
   }catch(e){
     slot.innerHTML=`<section class="sec alt"><div class="wrap">
       <div class="sechead"><div class="idx">!</div><div><div class="kicker">Error</div>
       <h2>AI 심화 설계 실패</h2><p>${String(e.message||e)}</p></div></div>
-      <p class="src">키가 맞는지, 크레딧이 남아 있는지, 모델 이름이 유효한지 확인해 주세요.
+      <p class="src">잠시 뒤 다시 시도해 주세요.
       기본 설계서는 위에 그대로 있으니 그것만으로도 사용 가능합니다.</p>
-      <div class="btnrow noprint"><button class="btn ghost" onclick="openAI('deep')">다시 시도</button></div>
+      <div class="btnrow noprint"><button class="btn ghost" onclick="startDeep()">다시 시도</button></div>
     </div></section>`;
   }
 }
