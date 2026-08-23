@@ -520,6 +520,17 @@ function renderReport(p){
   if(on('08')) H.push(sec(num(),'State','지금의 마음','', emo));
 
   /* ---------- 09 이 설계서가 서 있는 자리 ---------- */
+  /* ---------- ★ 마지막 차시 — 학생이 직접 짜는 칸 ---------- */
+  const pr = PRESENT[MODE] || PRESENT.both;
+  let make = `<p>${md(pr.lead)}</p>` +
+    pr.pads.map(([id,t,lead,ph])=>notepad(id,t,lead,ph)).join('') +
+    `<h3 class="blk">${PRESENT_TALK.title}</h3>
+     <p>${md(PRESENT_TALK.lead)}</p>
+     <table class="t"><tbody>${PRESENT_TALK.rows.map(r=>
+       `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+     <div class="pull" style="margin-top:16px">${md(PRESENT_TALK.note)}</div>`;
+  H.push(sec(num(), pr.kicker, pr.title, '', make, 'alt'));
+
   if(on('09')) H.push(sec(num(),'Method', SCIENCE_NOTE.title, '',
     SCIENCE_NOTE.body.map(b=>`<p>${md(b)}</p>`).join('') +
     `<p class="src">${SCIENCE_NOTE.src}</p>` +
