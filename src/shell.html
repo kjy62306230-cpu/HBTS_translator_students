@@ -374,6 +374,24 @@ section.dark .nph{color:#9FC7AF}
 section.dark .npl{color:rgba(244,241,234,.6)}
 section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
 
+/* ── 활동지 ──────────────────────────────────────────────
+   크롬북이 없는 학급을 위한 인쇄본. 설계서 전체(20장)가 아니라
+   현장에서 손으로 채우는 데 필요한 것만 A4 3장으로 추린다. */
+#sheet{display:none}
+.wsp{max-width:760px;margin:0 auto;padding:34px 0}
+.wsh{display:flex;justify-content:space-between;align-items:baseline;
+  border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:26px}
+.wsh b{font-size:19px;letter-spacing:-.02em}
+.wsh span{font-size:12px;color:#6E675C;letter-spacing:.04em}
+.wsq{display:flex;gap:14px;margin:0 0 22px;flex-wrap:wrap}
+.wsq div{flex:1;min-width:118px;border:1px solid var(--rule);border-radius:3px;padding:11px 13px}
+.wsq i{display:block;font-style:normal;font-size:11px;letter-spacing:.08em;color:#8A847A}
+.wsq b{font-size:22px;letter-spacing:-.03em}
+.wsn{border:1px solid var(--ink);border-radius:3px;padding:16px 18px;margin-top:16px}
+.wsn>b{display:block;font-size:13px;letter-spacing:.06em;margin-bottom:12px}
+.wsn u{display:block;height:31px;border-bottom:1px solid #C9C2B4;text-decoration:none}
+.wsx{font-size:12.5px;color:#6E675C;margin:6px 0 18px}
+
 @media print{
   body{background:#fff;font-size:10.5pt;line-height:1.62}
   body::before{display:none}
@@ -414,6 +432,12 @@ section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
   .cover,.teacher,section.dark,.callout,.pull,.tags span,.warnbox,.geo,.mission,
   .mcard,.vzb i,.tlx-n::before,.vzarrow,
   ol.step li::before,.tl .ti::before{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  /* 활동지 인쇄 모드 — 설계서를 숨기고 활동지만 낸다 */
+  body.printsheet #report,body.printsheet .cover,body.printsheet .teacher{display:none!important}
+  body.printsheet #sheet{display:block}
+  .wspage{break-after:page}
+  .wspage:last-child{break-after:auto}
+  .wsn,.wsq{break-inside:avoid}
   @page{margin:14mm 13mm}
 }
 </style>
@@ -525,7 +549,8 @@ section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
   <div class="wrap noprint" style="padding-top:26px">
     <div class="btnrow" style="margin:0 0 8px">
       <button class="btn" onclick="startDeep()">AI 심화 설계 추가</button>
-      <button class="btn ghost" onclick="window.print()">PDF로 저장 · 인쇄</button>
+      <button class="btn ghost" onclick="printSheet()">활동지 인쇄 (A4 3장)</button>
+      <button class="btn ghost" onclick="window.print()">전체 PDF · 인쇄</button>
       <button class="btn ghost" onclick="toggleEdit()">직접 고치기</button>
       <button class="btn ghost" onclick="backToInput()">점수 수정</button>
       <button class="btn ghost" onclick="padClearAll()">내가 쓴 내용 지우기</button>
@@ -533,6 +558,7 @@ section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
     </div>
   </div>
   <div id="report"></div>
+  <div id="sheet"></div>
 </section>
 
 <div class="modal" id="aiModal">

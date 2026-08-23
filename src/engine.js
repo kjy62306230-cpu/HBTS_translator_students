@@ -897,3 +897,62 @@ function padClearAll(){
   if(s) s.textContent = '내가 쓴 내용을 지웠습니다.';
   setTimeout(()=>{ if(s) s.textContent=''; }, 3000);
 }
+
+/* ==================================================================
+   활동지 — 크롬북이 없는 학급을 위한 인쇄본
+   ------------------------------------------------------------------
+   이 캠프는 종이를 쓰지 않는 것이 기본이다. 학생은 크롬북으로
+   화면에 직접 기재한다. 다만 크롬북이 없는 학교도 있으므로
+   그때만 쓰는 A4 3장짜리 최소 활동지를 따로 낸다.
+   설계서 20장을 인쇄하는 것이 아니다 — 현장에서 손으로 채울 것만 추린다.
+   ================================================================== */
+function wsLines(n){ return '<u></u>'.repeat(n); }
+
+function sheetHTML(p){
+  const s=p.scores, A=KB[p.top1], fl=FLOW[p.top1], qr=QUIT_RISK[p.top1], ft=FIRST_TOOLS[p.top1];
+  const head = t => `<div class="wsh"><b>${t}</b><span>${p.name} · ${GRADE[p.grade]} · 뿌리깊이</span></div>`;
+
+  /* 1장 — 나를 확인하고 시작한다 */
+  let a = `<div class="wspage"><div class="wsp">${head('① 나는 어떤 사람인가')}
+    <div class="wsq">${ORDER.map(c=>
+      `<div><i>${KB[c].ko} ${c}</i><b>${s[c]}</b></div>`).join('')}</div>
+    <p class="wsx">가장 높은 곳 <b>${A.ko}(${s[p.top1]})</b> · 가장 낮은 곳 <b>${KB[p.low].ko}(${s[p.low]})</b>
+       · 격차 ${p.spread}점</p>
+    <div class="wsn"><b>강사 설명을 들으며 — 나에게 맞는다고 느낀 문장</b>${wsLines(4)}</div>
+    <div class="wsn"><b>이건 나랑 다르다고 느낀 문장</b>${wsLines(3)}</div>
+    <div class="wsn"><b>왜 그렇게 느꼈나</b>${wsLines(3)}</div>
+  </div></div>`;
+
+  /* 2장 — 내 공부 흐름을 내 것으로 바꾼다 */
+  let b = `<div class="wspage"><div class="wsp">${head('② 내 공부 흐름 만들기')}
+    <p class="wsx">아래는 <b>${A.ko}</b> 쪽이 높은 학생에게 권하는 흐름입니다. 그대로 쓰지 말고 <b>내 상황에 맞게 고쳐서</b> 오른쪽에 적으세요.</p>
+    <table class="t"><tbody>${fl.day.rows.map(r=>
+      `<tr><td class="k">${r[0]}</td><td>${md(r[1]).replace(/<strong>|<\/strong>/g,'')}</td></tr>`).join('')}</tbody></table>
+    <div class="wsn"><b>내 하루 흐름 — 내가 실제로 할 수 있는 것으로</b>${wsLines(6)}</div>
+    <div class="wsn"><b>먼저 잡을 도구 하나만 고른다면</b>
+      <p class="wsx" style="margin:0 0 10px">${ft.items.map(x=>x[0]).join(' · ')}</p>${wsLines(2)}</div>
+  </div></div>`;
+
+  /* 3장 — 막는 것과 다음 한 걸음 */
+  let c = `<div class="wspage"><div class="wsp">${head('③ 나를 멈추게 하는 것')}
+    <p class="wsx">${qr.title}</p>
+    <table class="t"><tbody>${qr.items.map(t=>`<tr><td>${t}</td></tr>`).join('')}</tbody></table>
+    <div class="wsn"><b>이 중에 내가 실제로 겪은 것</b>${wsLines(3)}</div>
+    <div class="wsn"><b>그럴 때 나는 어떻게 할 것인가</b>${wsLines(4)}</div>
+    <div class="wsn"><b>이번 주에 딱 하나만 바꾼다면</b>${wsLines(2)}</div>
+    <p class="wsx" style="margin-top:20px">주식회사 뿌리깊이 · 1551-1294</p>
+  </div></div>`;
+
+  return a+b+c;
+}
+
+function printSheet(){
+  if(typeof P==='undefined' || !P){ alert('먼저 설계서를 만들어 주세요.'); return; }
+  $('sheet').innerHTML = sheetHTML(P);
+  document.body.classList.add('printsheet');
+  const off = ()=>{ document.body.classList.remove('printsheet');
+                    window.removeEventListener('afterprint', off); };
+  window.addEventListener('afterprint', off);
+  setTimeout(()=>window.print(), 60);
+  setTimeout(off, 4000);   /* afterprint 가 안 오는 브라우저 대비 */
+}

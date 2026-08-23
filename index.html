@@ -374,6 +374,24 @@ section.dark .nph{color:#9FC7AF}
 section.dark .npl{color:rgba(244,241,234,.6)}
 section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
 
+/* ── 활동지 ──────────────────────────────────────────────
+   크롬북이 없는 학급을 위한 인쇄본. 설계서 전체(20장)가 아니라
+   현장에서 손으로 채우는 데 필요한 것만 A4 3장으로 추린다. */
+#sheet{display:none}
+.wsp{max-width:760px;margin:0 auto;padding:34px 0}
+.wsh{display:flex;justify-content:space-between;align-items:baseline;
+  border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:26px}
+.wsh b{font-size:19px;letter-spacing:-.02em}
+.wsh span{font-size:12px;color:#6E675C;letter-spacing:.04em}
+.wsq{display:flex;gap:14px;margin:0 0 22px;flex-wrap:wrap}
+.wsq div{flex:1;min-width:118px;border:1px solid var(--rule);border-radius:3px;padding:11px 13px}
+.wsq i{display:block;font-style:normal;font-size:11px;letter-spacing:.08em;color:#8A847A}
+.wsq b{font-size:22px;letter-spacing:-.03em}
+.wsn{border:1px solid var(--ink);border-radius:3px;padding:16px 18px;margin-top:16px}
+.wsn>b{display:block;font-size:13px;letter-spacing:.06em;margin-bottom:12px}
+.wsn u{display:block;height:31px;border-bottom:1px solid #C9C2B4;text-decoration:none}
+.wsx{font-size:12.5px;color:#6E675C;margin:6px 0 18px}
+
 @media print{
   body{background:#fff;font-size:10.5pt;line-height:1.62}
   body::before{display:none}
@@ -414,6 +432,12 @@ section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
   .cover,.teacher,section.dark,.callout,.pull,.tags span,.warnbox,.geo,.mission,
   .mcard,.vzb i,.tlx-n::before,.vzarrow,
   ol.step li::before,.tl .ti::before{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  /* 활동지 인쇄 모드 — 설계서를 숨기고 활동지만 낸다 */
+  body.printsheet #report,body.printsheet .cover,body.printsheet .teacher{display:none!important}
+  body.printsheet #sheet{display:block}
+  .wspage{break-after:page}
+  .wspage:last-child{break-after:auto}
+  .wsn,.wsq{break-inside:avoid}
   @page{margin:14mm 13mm}
 }
 </style>
@@ -525,7 +549,8 @@ section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
   <div class="wrap noprint" style="padding-top:26px">
     <div class="btnrow" style="margin:0 0 8px">
       <button class="btn" onclick="startDeep()">AI 심화 설계 추가</button>
-      <button class="btn ghost" onclick="window.print()">PDF로 저장 · 인쇄</button>
+      <button class="btn ghost" onclick="printSheet()">활동지 인쇄 (A4 3장)</button>
+      <button class="btn ghost" onclick="window.print()">전체 PDF · 인쇄</button>
       <button class="btn ghost" onclick="toggleEdit()">직접 고치기</button>
       <button class="btn ghost" onclick="backToInput()">점수 수정</button>
       <button class="btn ghost" onclick="padClearAll()">내가 쓴 내용 지우기</button>
@@ -533,6 +558,7 @@ section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
     </div>
   </div>
   <div id="report"></div>
+  <div id="sheet"></div>
 </section>
 
 <div class="modal" id="aiModal">
@@ -2543,6 +2569,65 @@ function padClearAll(){
   const s = $('padMsg');
   if(s) s.textContent = '내가 쓴 내용을 지웠습니다.';
   setTimeout(()=>{ if(s) s.textContent=''; }, 3000);
+}
+
+/* ==================================================================
+   활동지 — 크롬북이 없는 학급을 위한 인쇄본
+   ------------------------------------------------------------------
+   이 캠프는 종이를 쓰지 않는 것이 기본이다. 학생은 크롬북으로
+   화면에 직접 기재한다. 다만 크롬북이 없는 학교도 있으므로
+   그때만 쓰는 A4 3장짜리 최소 활동지를 따로 낸다.
+   설계서 20장을 인쇄하는 것이 아니다 — 현장에서 손으로 채울 것만 추린다.
+   ================================================================== */
+function wsLines(n){ return '<u></u>'.repeat(n); }
+
+function sheetHTML(p){
+  const s=p.scores, A=KB[p.top1], fl=FLOW[p.top1], qr=QUIT_RISK[p.top1], ft=FIRST_TOOLS[p.top1];
+  const head = t => `<div class="wsh"><b>${t}</b><span>${p.name} · ${GRADE[p.grade]} · 뿌리깊이</span></div>`;
+
+  /* 1장 — 나를 확인하고 시작한다 */
+  let a = `<div class="wspage"><div class="wsp">${head('① 나는 어떤 사람인가')}
+    <div class="wsq">${ORDER.map(c=>
+      `<div><i>${KB[c].ko} ${c}</i><b>${s[c]}</b></div>`).join('')}</div>
+    <p class="wsx">가장 높은 곳 <b>${A.ko}(${s[p.top1]})</b> · 가장 낮은 곳 <b>${KB[p.low].ko}(${s[p.low]})</b>
+       · 격차 ${p.spread}점</p>
+    <div class="wsn"><b>강사 설명을 들으며 — 나에게 맞는다고 느낀 문장</b>${wsLines(4)}</div>
+    <div class="wsn"><b>이건 나랑 다르다고 느낀 문장</b>${wsLines(3)}</div>
+    <div class="wsn"><b>왜 그렇게 느꼈나</b>${wsLines(3)}</div>
+  </div></div>`;
+
+  /* 2장 — 내 공부 흐름을 내 것으로 바꾼다 */
+  let b = `<div class="wspage"><div class="wsp">${head('② 내 공부 흐름 만들기')}
+    <p class="wsx">아래는 <b>${A.ko}</b> 쪽이 높은 학생에게 권하는 흐름입니다. 그대로 쓰지 말고 <b>내 상황에 맞게 고쳐서</b> 오른쪽에 적으세요.</p>
+    <table class="t"><tbody>${fl.day.rows.map(r=>
+      `<tr><td class="k">${r[0]}</td><td>${md(r[1]).replace(/<strong>|<\/strong>/g,'')}</td></tr>`).join('')}</tbody></table>
+    <div class="wsn"><b>내 하루 흐름 — 내가 실제로 할 수 있는 것으로</b>${wsLines(6)}</div>
+    <div class="wsn"><b>먼저 잡을 도구 하나만 고른다면</b>
+      <p class="wsx" style="margin:0 0 10px">${ft.items.map(x=>x[0]).join(' · ')}</p>${wsLines(2)}</div>
+  </div></div>`;
+
+  /* 3장 — 막는 것과 다음 한 걸음 */
+  let c = `<div class="wspage"><div class="wsp">${head('③ 나를 멈추게 하는 것')}
+    <p class="wsx">${qr.title}</p>
+    <table class="t"><tbody>${qr.items.map(t=>`<tr><td>${t}</td></tr>`).join('')}</tbody></table>
+    <div class="wsn"><b>이 중에 내가 실제로 겪은 것</b>${wsLines(3)}</div>
+    <div class="wsn"><b>그럴 때 나는 어떻게 할 것인가</b>${wsLines(4)}</div>
+    <div class="wsn"><b>이번 주에 딱 하나만 바꾼다면</b>${wsLines(2)}</div>
+    <p class="wsx" style="margin-top:20px">주식회사 뿌리깊이 · 1551-1294</p>
+  </div></div>`;
+
+  return a+b+c;
+}
+
+function printSheet(){
+  if(typeof P==='undefined' || !P){ alert('먼저 설계서를 만들어 주세요.'); return; }
+  $('sheet').innerHTML = sheetHTML(P);
+  document.body.classList.add('printsheet');
+  const off = ()=>{ document.body.classList.remove('printsheet');
+                    window.removeEventListener('afterprint', off); };
+  window.addEventListener('afterprint', off);
+  setTimeout(()=>window.print(), 60);
+  setTimeout(off, 4000);   /* afterprint 가 안 오는 브라우저 대비 */
 }
 
 /* ===== verify.js ===== */
