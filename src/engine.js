@@ -334,6 +334,26 @@ function renderReport(p){
   let entry = `<p>${md(en.intro)}</p>
     <div class="entry">${en.map.map(([k,v])=>`<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>`;
 
+  /* 먼저 잡을 도구 — 효과가 아니라 「손이 가느냐」로 고른 것 */
+  const ft = FIRST_TOOLS[p.top1];
+  entry += `<h3 class="blk">먼저 잡을 도구 셋</h3>
+    <p>${md(ft.lead)}</p>
+    <div class="entry">${ft.items.map(([k,v])=>
+      `<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>`;
+
+  /* 그만두게 만드는 방식 — 이 섹션에서 가장 값어치 있는 부분 */
+  const qr = QUIT_RISK[p.top1];
+  entry += `<div class="warnbox" style="margin-top:26px"><b>${qr.title}</b>
+    <ul class="pl" style="margin:10px 0 10px">${qr.items.map(t=>`<li>${md(t)}</li>`).join('')}</ul>
+    ${md(qr.why)}</div>`;
+
+  /* 공통 도구함 — 좋은 방법을 유형에 가두지 않는다 */
+  entry += `<h3 class="blk">${TOOLBOX.title}</h3>
+    <p>${md(TOOLBOX.lead)}</p>
+    <table class="t"><tbody>${TOOLBOX.items.map(([k,v])=>
+      `<tr><td class="k">${k}</td><td>${md(v)}</td></tr>`).join('')}</tbody></table>
+    <p class="src" style="margin-top:12px">${md(TOOLBOX.note)}</p>`;
+
   const ei=EI[p.eiKey];
   entry += `<h3 class="blk">외향성 ${p.ex} : 내향성 ${p.inv} — ${ei.title}</h3>
     <p>${md(ei.body)}</p><div class="pull">${md(ei.todo)}</div>`;
@@ -354,6 +374,22 @@ function renderReport(p){
   let exam = `<p>${md(EXAM_PLAN.lead)}</p>
     <table class="t"><tbody>${EXAM_PLAN.rows.map(r=>
       `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>`;
+
+  /* ★ 시작 강도 — 공부에 대한 감정으로 나눈다.
+     긍정이 0인 학생에게 표준 계획표를 그대로 주면 첫 주에 덮는다. */
+  const pk = paceKey(p);
+  if(pk){
+    const pc = PACE[pk];
+    exam += `<h3 class="blk">${pc.title}</h3>
+      <p>${md(pc.body)}</p>
+      <table class="t"><tbody>${pc.plan.map(r=>
+        `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+      <div class="${pk==='hard'?'warnbox':'pull'}" style="margin-top:16px">${md(pc.tip)}</div>`;
+  }
+
+  /* 혼자 / 함께 — 외향:내향 */
+  const so = SOLO[p.eiKey] || SOLO.balanced;
+  exam += `<h3 class="blk">${so.title}</h3><p>${md(so.body)}</p>`;
 
   const ws=WEAK_SUPPORT[p.low];
   if(ws && s[p.low]<60){
