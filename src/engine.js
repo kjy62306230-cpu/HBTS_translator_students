@@ -214,11 +214,6 @@ function generate(){
   bumpStat(p.mode);          /* 사용 실적 — 개인정보 없이 건수만 */
 }
 function backToInput(){ $('result').style.display='none'; $('input').style.display='block'; window.scrollTo(0,0); }
-function toggleEdit(){
-  const on=document.body.classList.toggle('editing');
-  $('report').setAttribute('contenteditable', on?'true':'false');
-  if(on) $('report').focus();
-}
 
 function sec(idx, kicker, title, lead, body, cls){
   return `<section class="sec ${cls||''}"><div class="wrap">
@@ -288,11 +283,10 @@ function renderReport(p){
     <p class="gl">이 설계서는 <b>수업에서 들은 내용을 내 점수로 다시 보는</b> 자료입니다.
        처음부터 다 읽지 마세요. 아래 세 단계면 충분합니다.</p>
     <div class="gsteps">
-      <a href="#gs1"><i>①</i><b>확인</b><span>5분 — 들은 해석이 내 숫자에서 어떻게 보이나</span></a>
-      <a href="#gs2"><i>②</i><b>정리</b><span>10분 — 네 유형 중 내 학습법</span></a>
-      <a href="#gs3"><i>③</i><b>작성</b><span>20분 — 여기부터는 직접 씁니다</span></a>
+      <a href="#gs1"><i>①</i><b>나를 확인한다</b><span>내 점수가 무엇을 말하는지</span></a>
+      <a href="#gs2"><i>②</i><b>내 학습법을 본다</b><span>1·2순위 조합에 맞춘 실행 방법</span></a>
     </div>
-    <p class="gn">③은 <b>읽는 곳이 아니라 쓰는 곳</b>입니다. 오늘의 결과물이 거기서 나옵니다.</p>
+    <p class="gn">읽고 나면 <b>활동지에 내 것으로 옮겨 적습니다.</b> 오늘의 결과물은 활동지에서 나옵니다.</p>
   </div></section>`);
 
   if(on('01')) H.push(`<a id="gs1"></a>`+sec(num(),'Profile','두뇌 프로파일','',pf));
@@ -385,33 +379,11 @@ function renderReport(p){
       `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
     <div class="pull" style="margin-top:18px">${md(fl.key)}</div>`;
 
-  /* ── 유형별 거부 반응 (네 유형 전부 · 내 것 표시) ──
-     블로그의 「실제로 이런 차이가 있습니다」에 해당한다. */
-  const qr = QUIT_RISK[p.top1];
-  if(BRIEF){
-    entry += `<div class="warnbox" style="margin-top:26px"><b>${QUIT_RISK[p.top1].title}</b>
-      <ul class="pl" style="margin:10px 0 10px">${QUIT_RISK[p.top1].items.map(t=>`<li>${md(t)}</li>`).join('')}</ul>
-      ${md(QUIT_RISK[p.top1].why)}</div>`;
-  } else {
-  entry += `<h3 class="blk">유형별 거부 반응</h3>
-    <p>같은 말이 어떤 학생에게는 자유이고, 어떤 학생에게는 불안입니다.
-       <b>「알아서 해봐」가 어떤 학생에게는 최악</b>입니다.</p>
-    <p class="hint" style="margin:-6px 0 14px">●가 이 학생의 자리입니다.
-       나머지 세 줄은 <b>수업에서 들은 내용을 다시 확인</b>하는 용도입니다.</p>
-    <table class="t tmap"><thead><tr>
-      <th style="width:150px">유형</th><th>이렇게 시키면 손을 놓습니다</th>
-    </tr></thead><tbody>${ORDER.map(c=>{
-      const mine=(c===p.top1);
-      return `<tr${mine?' class="mine"':''}>
-        <td class="k">${mine?'● ':''}${KB[c].nick.replace(/ · /g,'·')}<span class="code">${c}</span></td>
-        <td>${QUIT_RISK[c].items.join(' · ')}</td></tr>`;
-    }).join('')}</tbody></table>
-    <div class="warnbox" style="margin-top:18px">${md(qr.why)}</div>`;
-  }
-
-  /* ── 1·2순위 조합 — 내 우성 두뇌 두 개가 함께 작동하는 방식 ── */
+  /* ── 1·2순위 조합 — 결과지 학습 파트의 핵심 ──
+     유형별 4종 표는 강사 PPT 와 활동지가 맡는다.
+     이 종이에는 「이 학생의 두 우성이 함께 작동하는 방식」만 담는다. */
   const csk = comboStudyKey(p);
-  if(csk && !BRIEF){
+  if(csk){
     const cs = COMBO_STUDY[csk];
     entry += `<h3 class="blk">내 우성 두뇌 두 개 — ${cs.name}</h3>
       <p>1순위 <b>${KB[p.top1].nick}(${s[p.top1]})</b> · 2순위 <b>${KB[p.top2].nick}(${s[p.top2]})</b>.
@@ -419,27 +391,6 @@ function renderReport(p){
       <ol class="step">${cs.how.map(t=>`<li>${md(t)}</li>`).join('')}</ol>
       <div class="warnbox" style="margin-top:16px">${md(cs.warn)}</div>`;
   }
-
-  /* ── 세 가지 처방 (블로그 약속: 암기 · 복습 · 필기) ── */
-  const PX = PRESCRIPTION;
-  entry += `<h3 class="blk">${PX.title}</h3>
-    <p>${md(PX.lead)}</p>
-    <p class="hint" style="margin:-6px 0 14px">●가 이 학생의 자리입니다.
-       나머지도 <b>필요하면 언제든 꺼내 쓰는 것</b>이지 못 쓰는 게 아닙니다.</p>
-    <table class="t tmap"><thead><tr>${PX.cols.map((c,i)=>
-      `<th${i===0?' style="width:150px"':''}>${c}</th>`).join('')}</tr></thead>
-      <tbody>${ORDER.map(c=>{
-        const mine=(c===p.top1);
-        return `<tr${mine?' class="mine"':''}>
-          <td class="k">${mine?'● ':''}${KB[c].nick.replace(/ · /g,'·')}<span class="code">${c}</span></td>
-          ${PX.rows[c].map(x=>`<td>${x}</td>`).join('')}</tr>`;
-      }).join('')}</tbody></table>
-
-    <h4 class="mini" style="margin-top:24px">이 학생의 세 가지 — 어떻게 하는 건가</h4>
-    <div class="entry">${PX.how[p.top1].map(([k,v])=>
-      `<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>
-    <div class="pull" style="margin-top:18px">${md(PX.open)}</div>
-    ${notepad('pick', PX.pick, PX.pickLead, PX.pickPh)}`;
 
   const ei=EI[p.eiKey];
   entry += `<h3 class="blk">외향성 ${p.ex} : 내향성 ${p.inv} — ${ei.title}</h3>
@@ -580,37 +531,7 @@ function renderReport(p){
 
   if(on('08')) H.push(sec(num(),'State','지금의 마음','', emo));
 
-  /* ---------- 09 이 설계서가 서 있는 자리 ---------- */
-  /* ---------- ★ 마지막 차시 — 학생이 직접 짜는 칸 ---------- */
-  const pr = PRESENT[MODE] || PRESENT.both;
-  let make = `<p>${md(pr.lead)}</p>` +
-    pr.pads.map(([id,t,lead,ph])=>notepad(id,t,lead,ph)).join('') +
-    `<h3 class="blk">${PRESENT_TALK.title}</h3>
-     <p>${md(PRESENT_TALK.lead)}</p>
-     <table class="t"><tbody>${PRESENT_TALK.rows.map(r=>
-       `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
-     <div class="pull" style="margin-top:16px">${md(PRESENT_TALK.note)}</div>`;
-
-  /* 4주 플랜 — 「남는 것」으로 약속된 산출물. 학습이 들어가는 과정에만. */
-  if(MODE!=='career'){
-    make = `<p>${md(pr.lead)}</p>` +
-      pr.pads.map(([id,t,lead,ph])=>notepad(id,t,lead,ph)).join('') +
-      `<h3 class="blk">${PLAN4.title}</h3><p>${md(PLAN4.lead)}</p>
-       <table class="t"><tbody>${PLAN4.rows.map(r=>
-         `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
-       ${notepad('plan4', PLAN4.padTitle, PLAN4.padLead, PLAN4.padPh)}
-       <h3 class="blk">${SUBJECT_PLAN.title}</h3><p>${md(SUBJECT_PLAN.lead)}</p>
-       <table class="t"><thead><tr>${SUBJECT_PLAN.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-         <tbody><tr>${SUBJECT_PLAN.sample.map((x,i)=>
-           `<td${i===0?' class="k"':''}>${x}</td>`).join('')}</tr></tbody></table>
-       <p class="src" style="margin-top:8px">↑ 예시입니다. 아래에 내 과목으로 적으세요.</p>
-       ${notepad('subj', SUBJECT_PLAN.padTitle, SUBJECT_PLAN.padLead, SUBJECT_PLAN.padPh)}` +
-      make.slice(make.indexOf('<h3 class="blk">'+PRESENT_TALK.title));
-  }
-  /* ── AI 활용은 진로 캠프 전용이다 ──
-     6차시(both)는 차시가 이미 꽉 차 있고, 그 상품의 값어치는
-     「그러려면 지금 공부는 이렇게」 칸에 있다.
-     AI 를 둘에 걸치면 진로 캠프의 차별점이 흐려진다. */
+  /* ---------- AI 로 더 깊이 (진로 캠프 전용) ---------- */
   if(MODE==='career'){
     const A2=AI_DEEP;
     H.push(sec(num(),'Go Deeper', A2.title, '',
@@ -625,23 +546,10 @@ function renderReport(p){
        <table class="t"><tbody>${A2.checks.map(r=>
          `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
        <div class="warnbox" style="margin-top:18px">${md(A2.warn)}</div>
-       ${notepad('aideep', A2.padTitle, A2.padLead, A2.padPh)}`, 'alt'));
+       <p class="src" style="margin-top:16px">대화하며 알게 된 것은 <b>활동지에 적으세요.</b></p>`, 'alt'));
   }
 
-  H.push(`<a id="gs3"></a>`+sec(num(), pr.kicker, pr.title, '', make, 'alt'));
-
-  /* 5·6차시 — 직접 해보기 (6차시 과정에서만) */
-  if(p.six){
-    const T=TRY_OUT;
-    H.push(sec(num(),'Try It Out', T.title, '',
-      `<p>${md(T.lead)}</p>
-       <table class="t"><tbody>${T.rows.map(r=>
-         `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
-       <div class="callout" style="margin-top:18px"><h5>왜 느낌이 아니라 숫자인가</h5>
-         <p style="margin-bottom:0">${md(T.note)}</p></div>
-       ${notepad('tryout', T.padTitle, T.padLead, T.padPh)}`));
-  }
-
+  /* ---------- 09 이 설계서가 서 있는 자리 ---------- */
   if(on('09')) H.push(sec(num(),'Method', SCIENCE_NOTE.title, '',
     SCIENCE_NOTE.body.map(b=>`<p>${md(b)}</p>`).join('') +
     `<p class="src">${SCIENCE_NOTE.src}</p>` +
@@ -953,123 +861,6 @@ livePreview();
 /* 강사용 우회 통로는 두지 않는다.
    코드 게이트가 생긴 뒤로는 그 자체가 구멍이 된다.
    관리 기능은 전부 관리자 페이지(admin.html)에서 다룬다. */
-
-/* ==================================================================
-   기재 공간 — 활동지 없이 크롬북에서 바로 쓴다
-   ------------------------------------------------------------------
-   이 캠프는 종이 활동지를 없애는 것이 목표다.
-   그래서 설계서 자체가 활동지 역할을 한다.
-   · 클릭하면 바로 써진다 (편집 모드 전환 불필요)
-   · 치는 대로 브라우저에 자동 저장 — 새로고침해도 남는다
-   · 학교 크롬북은 공용일 수 있으므로 「내 기록 지우기」를 함께 둔다
-   ================================================================== */
-function padKey(id){
-  const who = (typeof P!=='undefined' && P && P.name) ? P.name : '학생';
-  return `hbts_pad_${who}_${id}`;
-}
-function notepad(id, title, lead, ph){
-  let saved='';
-  try{ saved = localStorage.getItem(padKey(id)) || '' }catch(e){}
-  return `<div class="notepad" data-pad="${id}">
-    <div class="nph">${title}<span class="npst" id="npst_${id}"></span></div>
-    <p class="npl noprint">${md(lead)}</p>
-    <div class="npbox" id="np_${id}" contenteditable="true" spellcheck="false"
-         data-ph="${ph||'여기에 적으세요'}"
-         oninput="padSave('${id}')">${saved}</div>
-  </div>`;
-}
-/* 표 안에서 받아적는 칸 — 강사 PPT 를 들으며 학생이 채운다.
-   내 유형 행은 이미 채워져 있고, 나머지 유형은 비어 있다.
-   종이에 답을 다 적어주면 받아적을 이유가 없어지고 수업이 죽는다. */
-function padCell(id, ph){
-  let saved=''; try{ saved = localStorage.getItem(padKey(id)) || '' }catch(e){}
-  return `<td class="pcell" data-pad="${id}" id="np_${id}" contenteditable="true"
-    spellcheck="false" data-ph="${ph||''}" oninput="padSave('${id}')">${saved}</td>`;
-}
-
-let PAD_T = {};
-function padSave(id){
-  const el = $('np_'+id); if(!el) return;
-  const st = $('npst_'+id);
-  if(st) st.textContent = '저장 중…';
-  clearTimeout(PAD_T[id]);
-  PAD_T[id] = setTimeout(()=>{
-    try{ localStorage.setItem(padKey(id), el.innerHTML); if(st) st.textContent='저장됨'; }
-    catch(e){ if(st) st.textContent='저장 안 됨 — 인쇄해 두세요'; }
-    setTimeout(()=>{ if(st && st.textContent==='저장됨') st.textContent=''; }, 2200);
-  }, 400);
-}
-function padClearAll(){
-  const all = document.querySelectorAll('#report [data-pad]');
-  if(!all.length) return;
-  all.forEach(n=>{
-    const id = n.getAttribute('data-pad');
-    try{ localStorage.removeItem(padKey(id)) }catch(e){}
-    const b = $('np_'+id); if(b) b.innerHTML='';
-  });
-  const s = $('padMsg');
-  if(s) s.textContent = '내가 쓴 내용을 지웠습니다.';
-  setTimeout(()=>{ if(s) s.textContent=''; }, 3000);
-}
-
-/* ==================================================================
-   활동지 — 크롬북이 없는 학급을 위한 인쇄본
-   ------------------------------------------------------------------
-   이 캠프는 종이를 쓰지 않는 것이 기본이다. 학생은 크롬북으로
-   화면에 직접 기재한다. 다만 크롬북이 없는 학교도 있으므로
-   그때만 쓰는 A4 3장짜리 최소 활동지를 따로 낸다.
-   설계서 20장을 인쇄하는 것이 아니다 — 현장에서 손으로 채울 것만 추린다.
-   ================================================================== */
-function wsLines(n){ return '<u></u>'.repeat(n); }
-
-function sheetHTML(p){
-  const s=p.scores, A=KB[p.top1], fl=FLOW[p.top1], qr=QUIT_RISK[p.top1], ft=FIRST_TOOLS[p.top1];
-  const head = t => `<div class="wsh"><b>${t}</b><span>${p.name} · ${GRADE[p.grade]} · 뿌리깊이</span></div>`;
-
-  /* 1장 — 나를 확인하고 시작한다 */
-  let a = `<div class="wspage"><div class="wsp">${head('① 나는 어떤 사람인가')}
-    <div class="wsq">${ORDER.map(c=>
-      `<div><i>${KB[c].ko} ${c}</i><b>${s[c]}</b></div>`).join('')}</div>
-    <p class="wsx">가장 높은 곳 <b>${A.ko}(${s[p.top1]})</b> · 가장 낮은 곳 <b>${KB[p.low].ko}(${s[p.low]})</b>
-       · 격차 ${p.spread}점</p>
-    <div class="wsn"><b>강사 설명을 들으며 — 나에게 맞는다고 느낀 문장</b>${wsLines(4)}</div>
-    <div class="wsn"><b>이건 나랑 다르다고 느낀 문장</b>${wsLines(3)}</div>
-    <div class="wsn"><b>왜 그렇게 느꼈나</b>${wsLines(3)}</div>
-  </div></div>`;
-
-  /* 2장 — 내 공부 흐름을 내 것으로 바꾼다 */
-  let b = `<div class="wspage"><div class="wsp">${head('② 내 공부 흐름 만들기')}
-    <p class="wsx">아래는 <b>${A.ko}</b> 쪽이 높은 학생에게 권하는 흐름입니다. 그대로 쓰지 말고 <b>내 상황에 맞게 고쳐서</b> 오른쪽에 적으세요.</p>
-    <table class="t"><tbody>${fl.day.rows.map(r=>
-      `<tr><td class="k">${r[0]}</td><td>${md(r[1]).replace(/<strong>|<\/strong>/g,'')}</td></tr>`).join('')}</tbody></table>
-    <div class="wsn"><b>내 하루 흐름 — 내가 실제로 할 수 있는 것으로</b>${wsLines(6)}</div>
-    <div class="wsn"><b>먼저 잡을 도구 하나만 고른다면</b>
-      <p class="wsx" style="margin:0 0 10px">${ft.items.map(x=>x[0]).join(' · ')}</p>${wsLines(2)}</div>
-  </div></div>`;
-
-  /* 3장 — 막는 것과 다음 한 걸음 */
-  let c = `<div class="wspage"><div class="wsp">${head('③ 나를 멈추게 하는 것')}
-    <p class="wsx">${qr.title}</p>
-    <table class="t"><tbody>${qr.items.map(t=>`<tr><td>${t}</td></tr>`).join('')}</tbody></table>
-    <div class="wsn"><b>이 중에 내가 실제로 겪은 것</b>${wsLines(3)}</div>
-    <div class="wsn"><b>그럴 때 나는 어떻게 할 것인가</b>${wsLines(4)}</div>
-    <div class="wsn"><b>이번 주에 딱 하나만 바꾼다면</b>${wsLines(2)}</div>
-    <p class="wsx" style="margin-top:20px">주식회사 뿌리깊이 · 1551-1294</p>
-  </div></div>`;
-
-  return a+b+c;
-}
-
-function printSheet(){
-  if(typeof P==='undefined' || !P){ alert('먼저 설계서를 만들어 주세요.'); return; }
-  $('sheet').innerHTML = sheetHTML(P);
-  document.body.classList.add('printsheet');
-  const off = ()=>{ document.body.classList.remove('printsheet');
-                    window.removeEventListener('afterprint', off); };
-  window.addEventListener('afterprint', off);
-  setTimeout(()=>window.print(), 60);
-  setTimeout(off, 4000);   /* afterprint 가 안 오는 브라우저 대비 */
-}
 
 /* ==================================================================
    학생이 AI 에 붙여넣을 프롬프트

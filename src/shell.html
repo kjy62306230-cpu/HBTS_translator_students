@@ -323,10 +323,6 @@ details.opt[open] summary::before{content:'－ '}
 #result{display:none}
 .footer{background:var(--forest);color:rgba(244,241,234,.42);padding:34px 0;
   font-size:11.5px;text-align:center;line-height:2}
-.editbar{position:sticky;top:0;z-index:40;background:var(--gold);color:#231803;
-  padding:11px 20px;font-size:13px;font-weight:700;display:none;
-  align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
-.editing .editbar{display:flex}
 .editing #report{box-shadow:inset 0 0 0 2px var(--gold)}
 
 /* ---------------- 인쇄 ---------------- */
@@ -342,58 +338,6 @@ table.tmap tr.mine td{font-weight:600;color:var(--forest)}
 section.dark table.tmap tr.mine{background:rgba(180,210,190,.13)}
 section.dark table.tmap tr.mine td{color:#EAF1EC}
 section.dark table.tmap thead th{color:rgba(244,241,234,.5);border-bottom-color:rgba(244,241,234,.2)}
-
-/* 2차시 필기 공간 — 강의를 들으며 학생이 직접 채운다 */
-.notepad{margin-top:26px;border:1px solid var(--rule);border-radius:3px;padding:20px 22px 24px;
-  background:rgba(255,255,255,.45)}
-.nph{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--moss);
-  font-weight:700;margin-bottom:8px}
-.npl{font-size:13.5px;color:#6E675C;margin:0 0 16px}
-.npst{float:right;font-size:10.5px;letter-spacing:.06em;color:#9A9384;font-weight:500;text-transform:none}
-.npbox{min-height:140px;border:1px dashed var(--rule);border-radius:3px;padding:14px 16px;
-  font-size:15px;line-height:1.9;color:var(--ink);outline:none;background:rgba(255,255,255,.6);
-  white-space:pre-wrap}
-.npbox:hover{border-color:var(--moss)}
-.npbox:focus{border-style:solid;border-color:var(--moss);background:#fff;
-  box-shadow:0 0 0 3px rgba(46,125,91,.10)}
-.npbox:empty::before{content:attr(data-ph);color:#B3ADA0}
-/* 표 안에서 받아적는 칸 */
-td.pcell{outline:none;background:rgba(46,125,91,.045);
-  border-bottom:1px dashed #B9C9BE!important;cursor:text;min-width:90px}
-td.pcell:hover{background:rgba(46,125,91,.09)}
-td.pcell:focus{background:#fff;border-bottom:1px solid var(--moss)!important;
-  box-shadow:inset 0 0 0 2px rgba(46,125,91,.13)}
-td.pcell:empty::before{content:attr(data-ph);color:#B3ADA0;font-size:12.5px}
-section.dark td.pcell{background:rgba(244,241,234,.06);border-bottom-color:rgba(244,241,234,.3)!important}
-section.dark td.pcell:focus{background:rgba(244,241,234,.13)}
-section.dark td.pcell:empty::before{color:rgba(244,241,234,.4)}
-section.dark .npbox{background:rgba(244,241,234,.06);color:#F4F1EA;border-color:rgba(244,241,234,.3)}
-section.dark .npbox:focus{background:rgba(244,241,234,.11);border-color:#9FC7AF;
-  box-shadow:0 0 0 3px rgba(159,199,175,.16)}
-section.dark .npbox:empty::before{color:rgba(244,241,234,.4)}
-section.dark .npst{color:rgba(244,241,234,.5)}
-section.dark .notepad{border-color:rgba(244,241,234,.28);background:rgba(244,241,234,.05)}
-section.dark .nph{color:#9FC7AF}
-section.dark .npl{color:rgba(244,241,234,.6)}
-section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
-
-/* ── 활동지 ──────────────────────────────────────────────
-   크롬북이 없는 학급을 위한 인쇄본. 설계서 전체(20장)가 아니라
-   현장에서 손으로 채우는 데 필요한 것만 A4 3장으로 추린다. */
-#sheet{display:none}
-.wsp{max-width:760px;margin:0 auto;padding:34px 0}
-.wsh{display:flex;justify-content:space-between;align-items:baseline;
-  border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:26px}
-.wsh b{font-size:19px;letter-spacing:-.02em}
-.wsh span{font-size:12px;color:#6E675C;letter-spacing:.04em}
-.wsq{display:flex;gap:14px;margin:0 0 22px;flex-wrap:wrap}
-.wsq div{flex:1;min-width:118px;border:1px solid var(--rule);border-radius:3px;padding:11px 13px}
-.wsq i{display:block;font-style:normal;font-size:11px;letter-spacing:.08em;color:#8A847A}
-.wsq b{font-size:22px;letter-spacing:-.03em}
-.wsn{border:1px solid var(--ink);border-radius:3px;padding:16px 18px;margin-top:16px}
-.wsn>b{display:block;font-size:13px;letter-spacing:.06em;margin-bottom:12px}
-.wsn u{display:block;height:31px;border-bottom:1px solid #C9C2B4;text-decoration:none}
-.wsx{font-size:12.5px;color:#6E675C;margin:6px 0 18px}
 
 /* 진행 안내 — 수업 뒤에 여는 화면의 첫 블록 */
 section.guide{background:var(--forest);color:#F4F1EA;padding:34px 0 38px}
@@ -443,7 +387,7 @@ section.alt .promptbox{background:rgba(255,255,255,.72)}
 @media print{
   body{background:#fff;font-size:10.5pt;line-height:1.62}
   body::before{display:none}
-  .masthead,.btnrow,.editbar,.noprint,#input,#gate,.modal,.drop,.upstat{display:none!important}
+  .masthead,.btnrow,.noprint,#input,#gate,.modal,.drop,.upstat{display:none!important}
   .wrap{max-width:100%;padding:0}
   /* ★ 섹션 전체에 break-inside:avoid 를 걸면 한 장을 넘는 섹션이 통째로 밀려
      빈 페이지가 5장씩 생긴다. 섹션은 쪼개지게 두고, 안 쪼개질 「덩어리」만 지정한다. */
@@ -464,14 +408,6 @@ section.alt .promptbox{background:rgba(255,255,255,.72)}
   /* 교사용 마지막 목록 한 줄이 다음 장으로 넘어가지 않게 */
   .teacher ul.pl{break-inside:avoid}
   .teacher p.src{break-before:avoid}
-  .notepad{break-inside:avoid;background:transparent}
-  .promptbox{max-height:none;background:transparent}
-  /* 안 쓴 칸은 인쇄할 때 손으로 쓸 수 있게 줄만 남긴다 */
-  .npbox{border-style:solid;border-color:#D6CFC0;background:transparent;min-height:120px}
-  td.pcell{background:transparent;border-bottom:1px solid #C9C2B4!important}
-  td.pcell:empty::before{content:''}
-  .npbox:empty::before{content:''}
-  .npst{display:none}
   .callout,.pull,.warnbox,.mission,.geo,.mcard,.entry,
   .vz,.vzb,.vzbars,.tlx,.profile,.scores,.tags,.step li,
   figure,tr,li{break-inside:avoid}
@@ -483,12 +419,6 @@ section.alt .promptbox{background:rgba(255,255,255,.72)}
   .cover,.teacher,section.dark,.callout,.pull,.tags span,.warnbox,.geo,.mission,
   .mcard,.vzb i,.tlx-n::before,.vzarrow,
   ol.step li::before,.tl .ti::before{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  /* 활동지 인쇄 모드 — 설계서를 숨기고 활동지만 낸다 */
-  body.printsheet #report,body.printsheet .cover,body.printsheet .teacher{display:none!important}
-  body.printsheet #sheet{display:block}
-  .wspage{break-after:page}
-  .wspage:last-child{break-after:auto}
-  .wsn,.wsq{break-inside:avoid}
   @page{margin:14mm 13mm}
 }
 </style>
@@ -502,11 +432,6 @@ section.alt .promptbox{background:rgba(255,255,255,.72)}
   </div>
   <div class="meta">HBTS 진로·학습 설계 &nbsp;·&nbsp; 1551-1294</div>
 </div></div>
-
-<div class="editbar noprint">
-  <span>수정 모드 — 나와 다르다고 느끼는 문장을 직접 고쳐보세요</span>
-  <button class="btn sm ghost" style="background:#fff" onclick="toggleEdit()">수정 끝내기</button>
-</div>
 
 <!-- ==================== 입력 ==================== -->
 <!-- ==================== 입장 코드 ==================== -->
@@ -623,17 +548,12 @@ section.alt .promptbox{background:rgba(255,255,255,.72)}
   <div class="wrap noprint" style="padding-top:26px">
     <div class="btnrow" style="margin:0 0 8px">
       <button class="btn" onclick="startDeep()">AI 심화 설계 추가</button>
-      <button class="btn ghost" onclick="printSheet()">활동지 인쇄 (A4 3장)</button>
-      <button class="btn ghost" onclick="window.print()">전체 PDF · 인쇄</button>
-      <button class="btn ghost" onclick="toggleEdit()">직접 고치기</button>
+      <button class="btn ghost" onclick="window.print()">PDF로 저장 · 인쇄</button>
       <button class="btn ghost" onclick="backToInput()">점수 수정</button>
-      <button class="btn ghost" onclick="padClearAll()">내가 쓴 내용 지우기</button>
-      <span id="padMsg" class="hint" style="margin-left:6px"></span>
     </div>
   </div>
   <div class="wrap noprint"><div class="campbadge" id="campBadge" style="display:none"></div></div>
   <div id="report"></div>
-  <div id="sheet"></div>
 </section>
 
 <div class="modal" id="aiModal">
