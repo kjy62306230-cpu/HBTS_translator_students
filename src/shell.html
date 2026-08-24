@@ -366,6 +366,16 @@ input[type=number]{font-variant-numeric:tabular-nums;font-weight:700}
 .geo.ok{border-color:var(--moss);background:rgba(46,125,91,.08)}
 .geo.bad{border-color:var(--rab);background:rgba(196,102,28,.08)}
 .geo span{opacity:.7;font-size:12px}
+/* 검산 대조표 — 네 영역을 전부 보여준다. 하나만 보여주면 눈에 안 띈다. */
+table.geot{width:100%;border-collapse:collapse;margin:11px 0 0;font-size:13px;background:#fff}
+table.geot th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);
+  font-weight:700;text-align:left;padding:7px 9px;border-bottom:1.5px solid var(--ink)}
+table.geot td{padding:7px 9px;border-bottom:1px solid var(--rule);vertical-align:middle}
+table.geot td.n,table.geot th.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+table.geot tr.x td{background:rgba(196,102,28,.1)}
+table.geot td.r{color:#8B4A1B;font-weight:800}
+table.geot .sw{display:inline-block;width:9px;height:9px;margin-right:7px;vertical-align:baseline}
+.geo .btn.sm{margin:0}
 .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--rule);
   border-top-color:var(--forest);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-1px;margin-left:5px}
 @keyframes sp{to{transform:rotate(360deg)}}

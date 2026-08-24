@@ -206,6 +206,28 @@ let P=null;
 function generate(){
   const p=buildProfile();
   if(p.error){ alert(p.error); return; }
+
+  /* ⚠️ 2026-08-24 — 점수가 틀리면 설계서 전체가 틀린다.
+     실제로 LPB 34 를 84 로 오판독한 설계서가 그대로 나갔다.
+     기하 검산이 불일치를 잡았는데도 그냥 눌러서 넘어갈 수 있었던 것이 원인이다.
+     이제는 한 번 막고, 사용자가 「그래도 진행」을 명시적으로 눌러야 넘어간다. */
+  if(typeof GEO!=='undefined' && GEO && !GEO.ok && !window.__geoAck){
+    const bad = ['LAB','RAB','LPB','RPB'].filter(a=>GEO.per[a].off>0.15);
+    const lines = bad.map(a=>`  · ${KB[a].ko} — 넣은 값 ${GEO.per[a].given}점 / 그림이 말하는 값 ${GEO.per[a].est}점`).join('\n');
+    const go = confirm(
+      `잠깐만요. 점수가 결과지 그래프와 맞지 않습니다.\n\n${lines}\n\n`+
+      `점수가 틀리면 설계서 전체가 틀립니다.\n`+
+      `위로 올라가서 「그림이 말하는 값으로 전부 고치기」를 누르시거나,\n`+
+      `결과지 원본과 대조해 직접 고쳐 주세요.\n\n`+
+      `[취소] 올라가서 고치기 (권장)\n[확인] 이 값이 맞으니 그대로 진행`);
+    if(!go){
+      const sc=document.getElementById('scoreCard');
+      if(sc) sc.scrollIntoView({behavior:'smooth',block:'start'});
+      return;
+    }
+    window.__geoAck = true;   /* 사용자가 확인했다. 다시 묻지 않는다 */
+  }
+
   P=p;
   $('report').innerHTML=renderReport(p);
   $('input').style.display='none';
