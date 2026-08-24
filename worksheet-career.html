@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>HBTS 진로 캠프 활동지 · 뿌리깊이</title>
+<style>
+@page{size:A4;margin:15mm 14mm}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:#12100E;
+  font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  font-size:13.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.pg{max-width:186mm;margin:0 auto;padding:0;break-after:page}
+.pg:last-child{break-after:auto}
+.hd{display:flex;justify-content:space-between;align-items:flex-end;
+  border-bottom:2px solid #12100E;padding-bottom:8px;margin-bottom:18px}
+.hd b{font-size:18px;letter-spacing:-.03em}
+.hd i{font-style:normal;font-size:10.5px;letter-spacing:.12em;color:#8A847A;text-transform:uppercase}
+.hd span{font-size:11px;color:#6E675C}
+.nm{display:flex;gap:10px;margin-bottom:18px}
+.nm div{flex:1;border:1px solid #D6CFC0;border-radius:2px;padding:8px 11px}
+.nm i{display:block;font-style:normal;font-size:10px;letter-spacing:.06em;color:#8A847A;margin-bottom:2px}
+.nm u{display:block;height:16px;border-bottom:1px solid #D6CFC0;text-decoration:none}
+h2{font-size:14.5px;margin:17px 0 7px;letter-spacing:-.02em}
+h2 em{font-style:normal;color:#2E7D5B;margin-right:5px}
+p.g{font-size:12px;color:#6E675C;margin:0 0 9px}
+.box{border:1px solid #12100E;border-radius:2px;padding:12px 14px;margin-bottom:12px}
+.box>b{display:block;font-size:12.5px;margin-bottom:9px}
+.box u{display:block;height:26px;border-bottom:1px solid #C9C2B4;text-decoration:none}
+table{width:100%;border-collapse:collapse;margin-bottom:12px}
+th{font-size:10.5px;letter-spacing:.05em;color:#6E675C;font-weight:600;text-align:left;
+  padding:6px 8px;border-bottom:1.5px solid #12100E}
+td{border-bottom:1px solid #D6CFC0;padding:0;height:30px}
+td.k{font-size:12px;color:#3B372F;padding:0 8px;width:78px;background:#F7F5F0}
+td+td,th+th{border-left:1px solid #E5DFD2}
+th{border-left-color:transparent}
+.four{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:12px}
+.four div{border:1px solid #D6CFC0;border-radius:2px;padding:9px 11px;min-height:74px}
+.four b{display:block;font-size:12px;margin-bottom:5px;color:#123227}
+.four u{display:block;height:20px;border-bottom:1px dotted #C9C2B4;text-decoration:none}
+.note{font-size:11px;color:#8A847A;margin-top:4px}
+.ft{font-size:10px;color:#A9A296;text-align:right;margin-top:16px}
+table.tall td{height:60px}
+table.mid td{height:40px}
+.box.big u{height:34px}
+
+/* ── 진로 활동지 전용 ── */
+.step2{counter-reset:st;margin:0 0 12px}
+.step2 li{counter-increment:st;position:relative;padding-left:30px;margin-bottom:9px;list-style:none;font-size:12.5px}
+.step2 li::before{content:counter(st);position:absolute;left:0;top:.05em;width:20px;height:20px;
+  border-radius:50%;background:#123227;color:#fff;font-size:11px;font-weight:800;
+  display:flex;align-items:center;justify-content:center}
+.jobs{display:grid;grid-template-columns:repeat(2,1fr);gap:7px 12px;margin-bottom:12px}
+.jobs u{display:flex;align-items:flex-end;height:30px;border-bottom:1px solid #D6CFC0;text-decoration:none;
+  font-size:11px;color:#A9A296;padding-bottom:2px}
+.pick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.pick div{border:1.5px solid #123227;border-radius:2px;padding:10px 12px;min-height:96px}
+.pick i{display:block;font-style:normal;font-size:9.5px;letter-spacing:.14em;color:#2E7D5B;font-weight:800;margin-bottom:6px}
+.pick u{display:block;height:22px;border-bottom:1px solid #C9C2B4;text-decoration:none;margin-bottom:6px}
+.pick span{display:block;font-size:9.5px;color:#A9A296;margin-bottom:3px}
+.pick s{display:block;height:20px;border-bottom:1px dotted #C9C2B4;text-decoration:none}
+/* 로드맵 — 세로 타임라인 */
+.rm{border-left:2px solid #123227;margin:0 0 10px;padding-left:0}
+.rm .rw{display:grid;grid-template-columns:104px 1fr;gap:0;border-bottom:1px solid #D6CFC0}
+.rm .rw:first-child{border-top:1px solid #D6CFC0}
+.rm .rl{background:#F7F5F0;padding:9px 10px;border-right:1px solid #D6CFC0}
+.rm .rl b{display:block;font-size:12.5px;letter-spacing:-.02em}
+.rm .rl span{display:block;font-size:9.5px;color:#8A847A;margin-top:2px;line-height:1.4}
+.rm .rb{padding:0}
+.rm .rb u{display:block;height:34px;border-bottom:1px dotted #E0DACD;text-decoration:none;margin:0 10px}
+.rm .rb u:last-child{border-bottom:none}
+.draw{border:1.5px dashed #C9C2B4;border-radius:3px;height:150px;margin-bottom:8px;
+  display:flex;align-items:center;justify-content:center;color:#C9C2B4;font-size:11px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+</style></head><body>
+
+<!-- 1장 -->
+<div class="pg">
+  <div class="hd"><div><i>Career Worksheet 01</i><br><b>나를 확인한다</b></div>
+    <span>주식회사 뿌리깊이 · HBTS 진로 설계 캠프</span></div>
+  <div class="nm">
+    <div><i>학교 · 학년 · 반</i><u></u></div>
+    <div><i>이름</i><u></u></div>
+    <div><i>날짜</i><u></u></div>
+  </div>
+
+  <h2><em>①</em>내 점수 옮겨 적기</h2>
+  <p class="g">설계서 첫 장에 나온 네 영역 점수를 그대로 적으세요.</p>
+  <table><tbody>
+    <tr><td class="k" style="width:150px">좌측 전뇌 · 분석·전략형</td><td></td>
+        <td class="k" style="width:80px">1순위</td><td></td></tr>
+    <tr><td class="k">우측 전뇌 · 창의·직관형</td><td></td>
+        <td class="k">2순위</td><td></td></tr>
+    <tr><td class="k">좌측 후뇌 · 절차·반복형</td><td></td>
+        <td class="k">가장 낮은 곳</td><td></td></tr>
+    <tr><td class="k">우측 후뇌 · 감성·공감형</td><td></td><td class="k"></td><td></td></tr>
+  </tbody></table>
+
+  <h2><em>②</em>내 방향 세 개 옮겨 적기</h2>
+  <p class="g">설계서 「진로 방향」에 나온 <b>세 개의 방향</b>을 그대로 옮겨 적으세요.
+    옆칸에는 그 방향이 <b>「나 같다 / 잘 모르겠다 / 아닌 것 같다」</b> 중 하나를 적습니다.</p>
+  <table><thead><tr><th style="width:52px">순위</th><th>방향</th><th style="width:110px">내 느낌</th></tr></thead>
+  <tbody>
+    <tr><td class="k">1순위</td><td></td><td></td></tr>
+    <tr><td class="k">2순위</td><td></td><td></td></tr>
+    <tr><td class="k">3순위</td><td></td><td></td></tr>
+  </tbody></table>
+
+  <h2><em>③</em>내가 못 견디는 환경</h2>
+  <p class="g">설계서의 「피해야 할 것」에서 옮겨 적고, <b>실제로 겪어본 것이면 ✓</b> 표시하세요.</p>
+  <div class="box"><u></u><u></u></div>
+
+  <h2><em>④</em>맞다 / 다르다고 느낀 문장</h2>
+  <p class="g">검사가 틀릴 수도 있습니다. <b>다르게 느낀 것도 중요한 발견</b>입니다.</p>
+  <div class="two">
+    <div><p class="note" style="margin:0 0 5px"><b>이건 나 같다</b></p>
+      <div class="box" style="margin:0"><u></u><u></u></div></div>
+    <div><p class="note" style="margin:0 0 5px"><b>이건 나랑 다르다</b></p>
+      <div class="box" style="margin:0"><u></u><u></u></div></div>
+  </div>
+  <p class="ft">1 / 4</p>
+</div>
+
+<!-- 2장 -->
+<div class="pg">
+  <div class="hd"><div><i>Career Worksheet 02</i><br><b>AI에게 물어서 직업으로 바꾸기</b></div>
+    <span>주식회사 뿌리깊이</span></div>
+  <p class="g"><b>설계서 PDF를 ChatGPT에 올린 뒤</b> 아래 순서로 물어보세요.
+    설계서의 「AI와 더 대화해보기」 카드에 질문이 그대로 적혀 있습니다.</p>
+
+  <h2><em>⑤</em>추천받은 직업 적기 — 10개까지</h2>
+  <p class="g">AI가 알려준 것을 적으세요. <b>처음 들어보는 것에 ★</b> 표시.</p>
+  <div class="jobs">
+    <u>1</u><u>6</u><u>2</u><u>7</u><u>3</u><u>8</u><u>4</u><u>9</u><u>5</u><u>10</u>
+  </div>
+
+  <h2><em>⑥</em>세 개 고르기 — 내가 고릅니다</h2>
+  <p class="g"><b>AI에게 고르라고 시키지 마세요.</b> 위 ③번의 「못 견디는 환경」을 근거로 직접 고릅니다.</p>
+  <div class="pick">
+    <div><i>후보 1</i><u></u><u></u><span>고른 이유</span><s></s></div>
+    <div><i>후보 2</i><u></u><u></u><span>고른 이유</span><s></s></div>
+    <div><i>후보 3</i><u></u><u></u><span>고른 이유</span><s></s></div>
+  </div>
+
+  <h2><em>⑦</em>세 개 비교하기</h2>
+  <p class="g">AI에게 <b>하루 일과</b>와 <b>제일 지루한 부분</b>을 물어보고 적으세요.</p>
+  <table class="mid"><thead><tr><th style="width:88px">후보</th><th>하루에 주로 하는 일</th><th style="width:190px">제일 지루한 부분</th></tr></thead>
+  <tbody>
+    <tr><td class="k">1</td><td></td><td></td></tr>
+    <tr><td class="k">2</td><td></td><td></td></tr>
+    <tr><td class="k">3</td><td></td><td></td></tr>
+  </tbody></table>
+  <p class="note">※ <b>재미있는 부분은 누구나 견딥니다.</b> 지루한 부분을 견딜 수 있는지가 진짜 기준입니다.</p>
+
+  <h2><em>⑧</em>그래서 하나를 고른다면</h2>
+  <div class="box"><u></u></div>
+  <p class="ft">2 / 4</p>
+</div>
+
+<!-- 3장 · 로드맵 -->
+<div class="pg">
+  <div class="hd"><div><i>Career Worksheet 03</i><br><b>나의 진로 로드맵</b></div>
+    <span>주식회사 뿌리깊이</span></div>
+  <p class="g"><b>오늘의 결과물입니다.</b> ⑧에서 고른 하나를 놓고 채우세요.
+    AI에게 <b>「이번 학기·고1·고2·고3·그 다음에 각각 뭘 해야 하는지 표로 만들어줘」</b>라고 물은 뒤,
+    <b>내가 실제로 할 수 있는 것으로 고쳐서</b> 적습니다. 그대로 베끼면 안 합니다.</p>
+
+  <div class="nm" style="margin-bottom:14px">
+    <div><i>내가 고른 방향</i><u></u></div>
+    <div><i>목표 직업</i><u></u></div>
+  </div>
+
+  <div class="rm">
+    <div class="rw"><div class="rl"><b>지금 ~ 이번 학기</b><span>확인하는 단계</span></div>
+      <div class="rb"><u></u><u></u><u></u></div></div>
+    <div class="rw"><div class="rl"><b>고 1</b><span>넓혀두는 단계</span></div>
+      <div class="rb"><u></u><u></u><u></u></div></div>
+    <div class="rw"><div class="rl"><b>고 2</b><span>좁히는 단계</span></div>
+      <div class="rb"><u></u><u></u><u></u></div></div>
+    <div class="rw"><div class="rl"><b>고 3</b><span>증명하는 단계</span></div>
+      <div class="rb"><u></u><u></u><u></u></div></div>
+    <div class="rw"><div class="rl"><b>그 다음</b><span>들어가는 단계</span></div>
+      <div class="rb"><u></u><u></u></div></div>
+  </div>
+  <p class="note">※ <b>「지금 이번 학기」부터 채우세요.</b> 고3부터 거꾸로 채우면 실제로 안 움직입니다.<br>
+    ※ 로드맵은 <b>1년에 한 번은 고쳐야 정상</b>입니다. 안 바뀌면 그건 안 해본 것입니다.</p>
+  <p class="ft">3 / 4</p>
+</div>
+
+<!-- 4장 -->
+<div class="pg">
+  <div class="hd"><div><i>Career Worksheet 04</i><br><b>이번 달에 할 것 · 발표</b></div>
+    <span>주식회사 뿌리깊이</span></div>
+  <p class="g">로드맵은 <b>이번 달에 뭘 하느냐</b>로만 증명됩니다. 크게 잡지 마세요.</p>
+
+  <h2><em>⑨</em>이번 달에 할 것 — 딱 세 개</h2>
+  <p class="g">AI에게 <b>「이번 달 안에 시작할 수 있는 걸 3개, 돈이 거의 안 드는 걸로」</b>라고 물어보세요.</p>
+  <table class="tall"><thead><tr><th style="width:52px"></th><th>무엇을</th><th style="width:98px">언제까지</th></tr></thead>
+  <tbody>
+    <tr><td class="k">1</td><td></td><td></td></tr>
+    <tr><td class="k">2</td><td></td><td></td></tr>
+    <tr><td class="k">3</td><td></td><td></td></tr>
+  </tbody></table>
+  <p class="note">※ <b>1번은 이번 주에 할 수 있는 것</b>으로 잡으세요. 다음 달로 미룬 건 안 합니다.</p>
+
+  <h2><em>⑩</em>안 맞을 수도 있는 이유</h2>
+  <p class="g">AI에게 <b>「이 일이 나랑 안 맞을 수 있는 이유는?」</b>을 꼭 물어보고 적으세요.</p>
+  <div class="box"><u></u><u></u></div>
+
+  <h2><em>⑪</em>1분 발표 — 빈칸 채우기</h2>
+  <div class="box">
+    <b>아래를 채워서 그대로 읽으면 됩니다.</b>
+    <p style="margin:0 0 10px;font-size:12.5px;line-height:2.5">
+      제 검사 결과에서 나온 방향은 <u style="display:inline-block;width:200px;border-bottom:1px solid #C9C2B4;height:auto"></u> 였습니다.<br>
+      그중에 저는 <u style="display:inline-block;width:180px;border-bottom:1px solid #C9C2B4;height:auto"></u> 을 골랐습니다.<br>
+      고른 이유는 <u style="display:inline-block;width:230px;border-bottom:1px solid #C9C2B4;height:auto"></u> 이기 때문입니다.<br>
+      그래서 이번 달에 <u style="display:inline-block;width:220px;border-bottom:1px solid #C9C2B4;height:auto"></u> 을 해보겠습니다.<br>
+      걸리는 건 <u style="display:inline-block;width:140px;border-bottom:1px solid #C9C2B4;height:auto"></u> 인데,
+      <u style="display:inline-block;width:150px;border-bottom:1px solid #C9C2B4;height:auto"></u> 로 해보려고 합니다.
+    </p>
+  </div>
+  <p class="note">잘 말하는 것이 목표가 아닙니다. <b>자기 것을 말하는 것</b>이 목표입니다.</p>
+  <p class="ft">주식회사 뿌리깊이 · 1551-1294 &nbsp;|&nbsp; 4 / 4</p>
+</div>
+
+</body></html>

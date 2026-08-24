@@ -510,8 +510,51 @@ function renderReport(p){
       <div class="lcb">${body}${only?`<div class="only"><i>이것만</i><span>${md(only)}</span></div>`:''}</div></div>`;
   };
 
-  let car = `<p>아래는 <b>정답 목록이 아니라 탐색을 시작할 지도</b>입니다. 여기 없는 직업이 답일 수도 있습니다.
-    중요한 건 직업 이름이 아니라 <b>「내가 어떤 방식으로 일할 때 힘이 나는가」</b>입니다.</p>`;
+  let car = `<p>여기서 <b>방향을 세 개로 좁혀 드립니다.</b> 직업 이름이 아니라 <b>「어떤 자리에서 일할 때 힘이 나는가」</b>입니다.
+    <b>다음 시간에 이 셋 중 하나를 골라</b> 로드맵을 그리게 됩니다.</p>`;
+
+  /* ── 카드 · 내 진로 방향 3순위 ──────────────────────────────────
+     ⚠️ 여기가 이 결과지의 핵심이다 (2026-08-24 J님 지시).
+     「탐색 지도」로 두면 4차시에 30명이 다 헤맨다. 방향을 못 박아 준다.
+     ⚠️ 순위는 외향/내향으로 조정한다 — 사람을 많이 만나는 방향은 성향을 탄다. */
+  const DR = DIRECTION[p.pairKey];
+  if(DR){
+    /* 순위는 외향/내향으로만 조정한다.
+       ⚠️ 이름에서 키워드를 추측하지 말 것 — 「조직을 굴리는 자리」의 '조직'이 사람으로 오탐됐다.
+       people(0~2) 과 alsoNeeds 는 데이터에 명시되어 있다. */
+    /* 순서 규칙 — 최저 영역을 요구하는 방향은 뒤로 민다.
+       그 뒤에 외향/내향으로 조정한다. 「조심하라」고 써놓고 1순위에 두면 앞뒤가 안 맞는다. */
+    const isRisky = d => (d.alsoNeeds||[]).includes(p.low) && s[p.low] < 70;
+    let dirs = DR.dirs.slice().sort((a,b)=>{
+      const r = (isRisky(a)?1:0) - (isRisky(b)?1:0);
+      if(r) return r;
+      if(p.eiKey==='extra') return b.people - a.people;
+      if(p.eiKey==='intro') return a.people - b.people;
+      return 0;
+    });
+    const ord = ['1순위','2순위','3순위'];
+
+    car += `<h3 class="blk">내 방향 세 개 — ${DR.type}</h3>
+      <p>1순위 <b>${A.ko} ${s[p.top1]}점</b> · 2순위 <b>${B.ko} ${s[p.top2]}점</b> 조합에서 나온 것입니다.
+         <b>순서는 참고일 뿐,</b> 3순위를 골라도 전혀 이상하지 않습니다.</p>`;
+
+    dirs.forEach((d,i)=>{
+      const risky = isRisky(d);
+      car += ccard(`${ord[i]} — ${d.name}`,
+        d.why,
+        `<h4 class="mini">이런 자리들입니다</h4>
+         <div class="tags">${d.jobs.map(j=>`<span>${j}</span>`).join('')}</div>
+         <div class="callout" style="margin-top:16px"><h5>이 방향이 맞는 신호</h5>
+           <p style="margin-bottom:0">${md(d.signal)}</p></div>
+         ${risky?`<div class="warnbox">${md(DIR_CAUTION[p.low])}</div>`:''}
+         <h4 class="mini">다음 시간에 AI에게 이렇게 물으세요</h4>
+         <div class="promptbox"><pre>${esc(d.ask)}</pre></div>`,
+        `**${d.jobs.slice(0,3).join(' · ')}** — 다음 시간에 이 셋부터 찾아보세요.`);
+    });
+
+    car += `<div class="pull">셋 다 안 끌린다면 그것도 답입니다. <b>「셋 다 아니다」를 알아낸 것</b>도 오늘의 성과입니다 —
+      다음 시간에 AI에게 <b>「이 셋 말고 다른 방향」</b>을 물으면 됩니다.</div>`;
+  }
 
   /* ── 카드 · 어떤 분야에서 ── */
   {
@@ -610,6 +653,19 @@ function renderReport(p){
         bt.pick.replace(/\*\*/g,''));
   }
 
+  /* ④ 4차시에 그릴 로드맵 뼈대 — 틀이 없으면 「그려보세요」에 아무도 못 그린다 */
+  if(MODE!=='study'){
+    const RD = ROADMAP_DRAW;
+    car += `<h3 class="blk">${RD.head}</h3>` +
+      ccard('다섯 칸을 채우면 로드맵이 됩니다',
+        RD.lead,
+        `<table class="t"><tbody>${RD.rows.map(r=>
+           `<tr><td class="k" style="width:150px">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+         <div class="pull">${md(RD.note)}</div>
+         <div class="warnbox">${md(RD.warn)}</div>`,
+        '**「지금 이번 학기」 칸부터** 채우세요. 거기가 실제로 움직이는 칸입니다.');
+  }
+
   if(on('06')) H.push((MODE==='career'?`<a id="gs2"></a>`:'')+sec(num(),'Career','진로 방향','', car));
 
   /* ---------- 07 로드맵 ---------- */
@@ -696,8 +752,10 @@ function renderReport(p){
       A2.checkLead,
       `<table class="t"><tbody>${A2.checks.map(r=>
          `<tr><td class="k" style="width:110px">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+       <div class="callout"><h5>⑤번이 오늘의 핵심입니다</h5>
+         <p style="margin-bottom:0">${md(A2.roadmapNote)}</p></div>
        <div class="warnbox">${md(A2.warn)}</div>`,
-      '**⑦번을 꼭 하세요.** 좋은 말만 듣고 끝나면 오늘 한 게 없습니다.');
+      '**⑤번에서 받은 표를 활동지에 옮겨 그리는 것**이 오늘의 결과물입니다.');
 
     ai += acard(A2.blocked.head,
       A2.blocked.lead,
@@ -705,8 +763,9 @@ function renderReport(p){
          `<tr><td class="k" style="width:120px">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>`,
       'AI가 안 돼도 **심화 설계서는 이미 손에 있습니다.** 오늘 것은 이미 챙겼습니다.');
 
-    ai += `<p class="src" style="margin-top:20px">대화하며 알게 된 것은 <b>활동지에 적으세요.</b>
-      오늘의 산출물은 화면이 아니라 <b>손에 남는 종이</b>입니다.</p>`;
+    ai += `<div class="callout" style="margin-top:22px"><h5>오늘 손에 남는 것</h5>
+      <p style="margin-bottom:0">대화하며 알게 된 것은 <b>활동지 3장 「나의 진로 로드맵」</b>에 적습니다.
+        오늘의 산출물은 화면이 아니라 <b>손에 남는 종이</b>입니다.</p></div>`;
 
     H.push(sec(num(),'Go Deeper', A2.title, '', ai, 'alt'));
   }
