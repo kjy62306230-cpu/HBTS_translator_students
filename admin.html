@@ -197,19 +197,38 @@ async function api(body){
   const r=await fetch(FN,{method:'POST',
     headers:{'content-type':'application/json',apikey:ANON,Authorization:'Bearer '+ANON},
     body:JSON.stringify(Object.assign({},AUTH,body))});
+  if(!r.ok){ throw new Error('서버 응답 HTTP '+r.status); }
   return r.json();
 }
 function msg(el,t,c){ const e=$(el); e.className='msg '+(c||'ok'); e.innerHTML=t; }
 function hide(el){ $(el).className='msg'; }
 const MODE={study:'자기주도학습',career:'진로',both:'학업 로드맵'};
 
-/* ── 시작 ── */
+/* ── 시작 ──
+   서버에 못 닿으면 화면이 통째로 비어버린다. 그때는 이유를 보여준다. */
+function bootFail(e){
+  document.querySelector('.wrap').insertAdjacentHTML('afterbegin',
+    `<div class="card"><h2>서버에 연결하지 못했습니다</h2>
+      <p class="sub">${String(e && e.message || e)}</p>
+      <ul style="font-size:14px;color:var(--mut);line-height:1.9;padding-left:20px">
+        <li>인터넷 연결을 확인해 주세요</li>
+        <li>광고·추적 차단 확장 프로그램을 이 페이지에서 잠시 꺼보세요</li>
+        <li>시크릿 창으로 열어보세요 (확장 없이 뜹니다)</li>
+      </ul>
+      <button class="btn" onclick="location.reload()" style="margin-top:8px">다시 시도</button>
+    </div>`);
+}
+window.addEventListener('error', e=>{ if(!document.querySelector('#app').className) return; });
+
 (async function(){
-  try{ const s=sessionStorage.getItem('pg_admin'); if(s) AUTH=JSON.parse(s); }catch(e){}
-  const st=await api({action:'state'});
-  if(!st.exists){ $('setup').className=''; return; }
-  if(AUTH.id && (await api({action:'login'})).ok){ showApp(); return; }
-  $('login').className='';
+  try{
+    try{ const s=sessionStorage.getItem('pg_admin'); if(s) AUTH=JSON.parse(s); }catch(e){}
+    const st=await api({action:'state'});
+    if(!st || st.ok!==true){ throw new Error('서버가 예상과 다른 답을 보냈습니다.'); }
+    if(!st.exists){ $('setup').className=''; return; }
+    if(AUTH.id && (await api({action:'login'})).ok){ showApp(); return; }
+    $('login').className='';
+  }catch(e){ bootFail(e); }
 })();
 
 async function doSetup(){
