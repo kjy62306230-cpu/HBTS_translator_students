@@ -419,6 +419,13 @@ section.guide{background:var(--forest);color:#F4F1EA;padding:34px 0 38px}
 .gn b{color:#9FC7AF}
 @media(max-width:680px){ .gsteps{grid-template-columns:1fr} }
 
+/* AI 프롬프트 글상자 */
+.promptbox{border:1px solid var(--rule);border-radius:3px;background:rgba(255,255,255,.6);
+  max-height:290px;overflow:auto;margin-top:16px}
+.promptbox pre{margin:0;padding:18px 20px;font-size:13px;line-height:1.72;white-space:pre-wrap;
+  word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#3B372F}
+section.alt .promptbox{background:rgba(255,255,255,.72)}
+
 @media print{
   body{background:#fff;font-size:10.5pt;line-height:1.62}
   body::before{display:none}
@@ -444,6 +451,7 @@ section.guide{background:var(--forest);color:#F4F1EA;padding:34px 0 38px}
   .teacher ul.pl{break-inside:avoid}
   .teacher p.src{break-before:avoid}
   .notepad{break-inside:avoid;background:transparent}
+  .promptbox{max-height:none;background:transparent}
   /* 안 쓴 칸은 인쇄할 때 손으로 쓸 수 있게 줄만 남긴다 */
   .npbox{border-style:solid;border-color:#D6CFC0;background:transparent;min-height:120px}
   td.pcell{background:transparent;border-bottom:1px solid #C9C2B4!important}

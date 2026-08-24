@@ -322,6 +322,13 @@ function renderReport(p){
   who += `<h4 class="mini">이 유형이 힘을 내는 자리</h4>
     <ul class="pl">${A.core.map(t=>`<li>${md(t)}</li>`).join('')}</ul>`;
 
+  if(MODE==='study'){
+    who += `<h3 class="blk">참고 — 이 유형이 강한 분야</h3>
+      <p class="hint" style="margin:-6px 0 14px">이번 캠프는 <b>공부하는 방법</b>이 주제라 진로는 깊게 다루지 않습니다.
+         아래는 <b>참고용</b>이고, 여기 없는 일을 해도 전혀 문제없습니다.</p>
+      <table class="t"><tbody>${CAREER_MAP[p.top1].map(([k,v])=>
+        `<tr><td class="k">${k}</td><td>${v}</td></tr>`).join('')}</tbody></table>`;
+  }
   if(on('02')) H.push(sec(num(),'Identity','나는 이런 사람입니다','', who, 'alt'));
 
   /* ---------- 03 학습 과학 (다크) ---------- */
@@ -399,6 +406,17 @@ function renderReport(p){
         <td>${QUIT_RISK[c].items.join(' · ')}</td></tr>`;
     }).join('')}</tbody></table>
     <div class="warnbox" style="margin-top:18px">${md(qr.why)}</div>`;
+  }
+
+  /* ── 1·2순위 조합 — 내 우성 두뇌 두 개가 함께 작동하는 방식 ── */
+  const csk = comboStudyKey(p);
+  if(csk && !BRIEF){
+    const cs = COMBO_STUDY[csk];
+    entry += `<h3 class="blk">내 우성 두뇌 두 개 — ${cs.name}</h3>
+      <p>1순위 <b>${KB[p.top1].nick}(${s[p.top1]})</b> · 2순위 <b>${KB[p.top2].nick}(${s[p.top2]})</b>.
+         ${md(cs.line)}</p>
+      <ol class="step">${cs.how.map(t=>`<li>${md(t)}</li>`).join('')}</ol>
+      <div class="warnbox" style="margin-top:16px">${md(cs.warn)}</div>`;
   }
 
   /* ── 세 가지 처방 (블로그 약속: 암기 · 복습 · 필기) ── */
@@ -579,9 +597,33 @@ function renderReport(p){
       `<h3 class="blk">${PLAN4.title}</h3><p>${md(PLAN4.lead)}</p>
        <table class="t"><tbody>${PLAN4.rows.map(r=>
          `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
-       ${notepad('plan4', PLAN4.padTitle, PLAN4.padLead, PLAN4.padPh)}` +
+       ${notepad('plan4', PLAN4.padTitle, PLAN4.padLead, PLAN4.padPh)}
+       <h3 class="blk">${SUBJECT_PLAN.title}</h3><p>${md(SUBJECT_PLAN.lead)}</p>
+       <table class="t"><thead><tr>${SUBJECT_PLAN.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+         <tbody><tr>${SUBJECT_PLAN.sample.map((x,i)=>
+           `<td${i===0?' class="k"':''}>${x}</td>`).join('')}</tr></tbody></table>
+       <p class="src" style="margin-top:8px">↑ 예시입니다. 아래에 내 과목으로 적으세요.</p>
+       ${notepad('subj', SUBJECT_PLAN.padTitle, SUBJECT_PLAN.padLead, SUBJECT_PLAN.padPh)}` +
       make.slice(make.indexOf('<h3 class="blk">'+PRESENT_TALK.title));
   }
+  /* 진로 캠프 — 툴 결과를 AI 에 넘겨 더 깊이 파는 단계 */
+  if(MODE!=='study'){
+    const A2=AI_DEEP;
+    H.push(sec(num(),'Go Deeper', A2.title, '',
+      `<p>${md(A2.lead)}</p>
+       <div class="warnbox">${md(A2.privacy)}</div>
+       <div class="promptbox"><pre id="aiPrompt">${esc(studentPrompt(p))}</pre></div>
+       <div class="btnrow noprint" style="margin-top:12px">
+         <button class="btn sm" onclick="copyAiPrompt()">${A2.copy}</button>
+         <span id="cpMsg" class="hint" style="margin-left:8px"></span>
+       </div>
+       <h3 class="blk">${A2.checkTitle}</h3><p>${md(A2.checkLead)}</p>
+       <table class="t"><tbody>${A2.checks.map(r=>
+         `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+       <div class="warnbox" style="margin-top:18px">${md(A2.warn)}</div>
+       ${notepad('aideep', A2.padTitle, A2.padLead, A2.padPh)}`, 'alt'));
+  }
+
   H.push(`<a id="gs3"></a>`+sec(num(), pr.kicker, pr.title, '', make, 'alt'));
 
   /* 5·6차시 — 직접 해보기 (6차시 과정에서만) */
@@ -1040,4 +1082,54 @@ function printSheet(){
   window.addEventListener('afterprint', off);
   setTimeout(()=>window.print(), 60);
   setTimeout(off, 4000);   /* afterprint 가 안 오는 브라우저 대비 */
+}
+
+/* ==================================================================
+   학생이 AI 에 붙여넣을 프롬프트
+   ------------------------------------------------------------------
+   ⚠️ 이름·학교는 넣지 않는다. 점수와 방향만으로 충분하다.
+   ================================================================== */
+const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function studentPrompt(p){
+  const s=p.scores, A=KB[p.top1], B=KB[p.top2];
+  const cb = p.usePair ? COMBO[p.pairKey] : null;
+  return `나는 ${GRADE[p.grade]}이야. HBTS 뇌 사고유형 검사를 받았고 결과는 아래와 같아.
+
+[검사 결과]
+${ORDER.map(c=>`${KB[c].ko}(${KB[c].nick}) ${s[c]}점`).join('\n')}
+가장 높은 곳: ${A.nick} ${s[p.top1]}점
+두 번째: ${B.nick} ${s[p.top2]}점
+가장 낮은 곳: ${KB[p.low].nick} ${s[p.low]}점
+외향성:내향성 = ${p.ex}:${p.inv}
+${cb?`두 강점이 겹치는 자리: ${cb.name} — ${cb.desc}`:''}
+
+[내가 힘이 나는 방식]
+${WORK_STYLE[p.top1]}
+
+너는 진로 상담 전문가야. 아래 네 가지를 꼭 지켜줘.
+1. 직업 하나로 확정하지 마. 후보를 넓혔다가 좁히는 걸 도와줘.
+2. 연봉·전망·합격선 같은 숫자는 확실하지 않으면 "직접 확인이 필요하다"고 말해줘.
+3. ${GRADE[p.grade]}이 알아들을 수 있는 말로, 짧게.
+4. 답을 준 다음에는 나한테 되물어줘. 내가 스스로 생각하게.
+
+준비됐으면 "준비됐어"라고만 답해줘. 내가 하나씩 물어볼게.`;
+}
+
+function copyAiPrompt(){
+  const el = $('aiPrompt'); if(!el) return;
+  const t = el.textContent;
+  const done = ()=>{ const m=$('cpMsg'); if(m){ m.textContent=AI_DEEP.copied;
+    setTimeout(()=>{ m.textContent=''; }, 3000); } };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done).catch(()=>fallbackCopy(t,done));
+  } else fallbackCopy(t,done);
+}
+function fallbackCopy(t, done){
+  const ta=document.createElement('textarea');
+  ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); done(); }
+  catch(e){ const m=$('cpMsg'); if(m) m.textContent='복사가 안 됩니다 — 글상자를 직접 드래그해 복사하세요'; }
+  document.body.removeChild(ta);
 }

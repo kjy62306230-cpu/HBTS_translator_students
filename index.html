@@ -419,6 +419,13 @@ section.guide{background:var(--forest);color:#F4F1EA;padding:34px 0 38px}
 .gn b{color:#9FC7AF}
 @media(max-width:680px){ .gsteps{grid-template-columns:1fr} }
 
+/* AI 프롬프트 글상자 */
+.promptbox{border:1px solid var(--rule);border-radius:3px;background:rgba(255,255,255,.6);
+  max-height:290px;overflow:auto;margin-top:16px}
+.promptbox pre{margin:0;padding:18px 20px;font-size:13px;line-height:1.72;white-space:pre-wrap;
+  word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#3B372F}
+section.alt .promptbox{background:rgba(255,255,255,.72)}
+
 @media print{
   body{background:#fff;font-size:10.5pt;line-height:1.62}
   body::before{display:none}
@@ -444,6 +451,7 @@ section.guide{background:var(--forest);color:#F4F1EA;padding:34px 0 38px}
   .teacher ul.pl{break-inside:avoid}
   .teacher p.src{break-before:avoid}
   .notepad{break-inside:avoid;background:transparent}
+  .promptbox{max-height:none;background:transparent}
   /* 안 쓴 칸은 인쇄할 때 손으로 쓸 수 있게 줄만 남긴다 */
   .npbox{border-style:solid;border-color:#D6CFC0;background:transparent;min-height:120px}
   td.pcell{background:transparent;border-bottom:1px solid #C9C2B4!important}
@@ -1551,6 +1559,61 @@ const TRY_OUT = {
   padPh:'내 방식 —      개 / 20개\n다른 방식 —      개 / 20개\n택할 것 —'
 };
 
+/* ==================================================================
+   1·2순위 조합 학습법 — 「내 우성 두뇌 두 개」에 맞춘 구체적 실행
+   ------------------------------------------------------------------
+   지금까지는 1순위 하나로만 학습법을 줬다. 실제로는 두 개가 함께 작동한다.
+   같은 절차·반복형이라도 2순위가 분석형인지 공감형인지에 따라
+   현장에서 하는 일이 달라진다.
+   ================================================================== */
+const COMBO_STUDY = {
+'LAB+LPB':{ name:'분석 + 절차', line:'**틀을 만들고 그 틀대로 끝까지 가는** 조합입니다.',
+  how:['단원을 시작하기 전에 **내가 직접 목차를 짭니다.** 남이 준 계획표보다 내가 짠 것을 지킵니다.',
+       '짠 목차를 **체크리스트로 바꿔** 하나씩 지웁니다. 이유(분석)와 절차(반복)가 같이 굴러갑니다.',
+       '오답은 **원인별로 분류해 누적**합니다. 「계산 실수 / 개념 착각 / 안 외움」 세 칸이면 충분합니다.'],
+  warn:'⚠️ 틀을 짜는 데 시간을 다 쓰고 정작 공부를 못 하는 경우가 잦습니다. **계획은 10분 안에** 끝내세요.' },
+'LAB+RAB':{ name:'분석 + 창의', line:'**원리를 파악하고 그것을 새 방식으로 바꿔보는** 조합입니다.',
+  how:['개념을 배우면 **「이걸 다르게 설명하면?」**을 한 번 해봅니다. 비유로 바꾸는 순간 이해가 굳습니다.',
+       '전체 구조를 **한 장 도식으로** 그린 뒤 세부로 들어갑니다. 순서를 거꾸로 하면 흥미가 먼저 끊깁니다.',
+       '문제는 **유형 분류 기준을 스스로 정한 뒤** 섞어 풉니다. 분류하는 행위 자체가 재미가 됩니다.'],
+  warn:'⚠️ 재미있는 부분만 깊게 파고 지루한 부분을 통째로 비워둡니다. **덜 재미있는 단원에 먼저 손대세요.**' },
+'LAB+RPB':{ name:'분석 + 공감', line:'**논리로 이해하고 그것을 말로 풀어내는** 조합입니다.',
+  how:['배운 것을 **누군가에게 설명하듯 소리 내어** 정리합니다. 이 조합에서 가장 잘 듣는 방법입니다.',
+       '설명하다 **막히는 지점을 표시**해두고 그것만 다시 봅니다. 막힌 자리가 곧 모르는 자리입니다.',
+       '왜 그런지를 **문장으로** 씁니다. 표보다 문장이 이 조합에는 잘 남습니다.'],
+  warn:'⚠️ 이해한 느낌과 실제로 꺼낼 수 있는 것은 다릅니다. **말한 뒤 반드시 백지에 써보세요.**' },
+'RAB+LPB':{ name:'창의 + 절차', line:'**떠오른 것을 형태로 고정시키는** 조합입니다.',
+  how:['아이디어가 흩어지지 않게 **정해진 노트 한 권**에 모읍니다. 형식이 있어야 창의가 남습니다.',
+       '마인드맵으로 펼친 뒤 **번호를 매겨 순서를 만듭니다.** 펼치기와 정리하기를 나눠서 합니다.',
+       '**25분 단위로 끊되 시간표는 고정**합니다. 짧게 하되 매일 같은 시간에.'],
+  warn:'⚠️ 새 방법을 자꾸 시도하다 아무것도 안 쌓입니다. **한 방법을 최소 2주는 유지하세요.**' },
+'RAB+RPB':{ name:'창의 + 공감', line:'**이야기와 그림으로 기억을 붙잡는** 조합입니다.',
+  how:['외울 것을 **장면이나 이야기로** 바꿉니다. 사람이 등장하면 더 오래 남습니다.',
+       '**서로 가르치는 스터디**가 가장 잘 맞습니다. 다만 옆에 앉아만 있는 건 효과가 없습니다.',
+       '배운 것으로 **한 장짜리 결과물**을 만듭니다. 발표 자료·요약 카드 등 형태가 있으면 남습니다.'],
+  warn:'⚠️ 분위기가 좋으면 공부한 것 같은 착각이 듭니다. **끝나고 혼자 백지 인출로 확인하세요.**' },
+'LPB+RPB':{ name:'절차 + 공감', line:'**꾸준히 하되 혼자 두면 힘이 빠지는** 조합입니다.',
+  how:['**요일·시간을 고정**하고, 그중 한 번은 **누군가와 같이** 합니다.',
+       '체크리스트를 쓰되 **다 지운 날은 스스로 표시**를 남깁니다. 눈에 보이는 인정이 연료가 됩니다.',
+       '복습노트를 **설명하듯 문장으로** 씁니다. 표만 있으면 이 조합에는 건조합니다.'],
+  warn:'⚠️ 비교당하면 그날 하루가 통째로 날아갑니다. **내 어제와만 비교하세요.**' }
+};
+function comboStudyKey(p){
+  const k=[p.top1,p.top2].sort().join('+');
+  return COMBO_STUDY[k] ? k : null;
+}
+
+/* 과목별 실행 계획 — 「오늘 무슨 과목을 이런 방식으로 해보겠다」 */
+const SUBJECT_PLAN = {
+  title:'과목별로 어떻게 할 것인가',
+  lead:'위에서 고른 방법을 **실제 과목에 붙여** 적으세요. 「열심히」 말고 **「어떤 방식으로, 얼마나」**로 씁니다.',
+  head:['과목','어떤 방식으로','얼마나'],
+  sample:['수학','오답 원인 3칸 분류 + 섞어 풀기','하루 20분 · 15문제'],
+  padTitle:'과목별 실행 계획',
+  padLead:'과목 3~4개면 충분합니다. 다 채우려 하지 마세요.',
+  padPh:'국어 —\n영어 —\n수학 —\n(과목) —'
+};
+
 /* ===== roadmap.js ===== */
 /* ==================================================================
    학창시절 로드맵 (2026-08 기준 제도 반영)
@@ -1841,6 +1904,36 @@ const PRESENT_TALK = {
     ['마지막','「걸리는 건 ○○인데, ○○로 해보려고 합니다.」']
   ],
   note:'잘 말하는 것이 목표가 아닙니다. **자기 것을 말하는 것**이 목표입니다.'
+};
+
+/* ==================================================================
+   AI 로 더 깊이 — 진로 캠프 전용
+   ------------------------------------------------------------------
+   툴이 방향을 잡아주면, 그 결과를 AI 에 넣어 학생이 스스로 파고든다.
+   강사는 「무엇을 물어야 하는가」를 지도한다.
+   ⚠️ 이름·학교는 넣지 않는다. 점수와 방향만으로 충분하다.
+   ================================================================== */
+const AI_DEEP = {
+  title:'AI로 더 깊이 파보기',
+  lead:'아래 글상자를 **통째로 복사해서 ChatGPT 같은 AI에 붙여넣으세요.** 그다음 체크리스트의 질문을 하나씩 던지면 됩니다.',
+  privacy:'⚠️ **이름·학교·연락처는 넣지 마세요.** 점수와 방향만으로 충분합니다. 아래 글상자에도 이름은 들어 있지 않습니다.',
+  copy:'프롬프트 복사하기',
+  copied:'복사됐습니다 — AI 채팅창에 붙여넣으세요',
+  checkTitle:'AI에게 이렇게 물어보세요',
+  checkLead:'순서대로 하나씩 물어보세요. **답을 받으면 「왜 그렇게 생각해?」를 한 번 더** 던지는 것이 핵심입니다.',
+  checks:[
+    ['① 넓히기','"이 조합에 맞는 직업을 15개 알려줘. 잘 알려지지 않은 것도 포함해서."'],
+    ['② 좁히기','"그중에서 사람을 자주 만나지 않는 것만 골라줘." — 조건은 내가 정합니다'],
+    ['③ 현실 확인','"이 직업의 하루 일과를 시간대별로 알려줘. 힘든 점도 솔직하게."'],
+    ['④ 경로','"이 일을 하려면 어떤 학과에 가야 해? 학과 말고 다른 길도 있어?"'],
+    ['⑤ 과목 연결','"고등학교에서 어떤 과목을 선택하면 도움이 돼?"'],
+    ['⑥ 검증','"내가 이 일에 맞는지 알아보려면 지금 뭘 해보면 될까? 3개월 안에 할 수 있는 걸로."'],
+    ['⑦ 반대편','"반대로 이 일이 나랑 안 맞을 수 있는 이유는 뭐야?"']
+  ],
+  warn:'⚠️ **AI 말을 그대로 믿지 마세요.** 특히 연봉·전망·합격선 같은 숫자는 틀리는 경우가 많습니다. AI는 **후보를 넓히고 질문을 만드는 데** 쓰고, 사실 확인은 학과 홈페이지·워크넷에서 하세요.',
+  padTitle:'AI와 대화하고 나서 — 건진 것',
+  padLead:'새로 알게 된 것, 후보에서 빠진 것, 더 알아볼 것을 적으세요.',
+  padPh:'새로 안 것 —\n빠진 후보 —\n더 알아볼 것 —'
 };
 
 /* ===== engine.js ===== */
@@ -2168,6 +2261,13 @@ function renderReport(p){
   who += `<h4 class="mini">이 유형이 힘을 내는 자리</h4>
     <ul class="pl">${A.core.map(t=>`<li>${md(t)}</li>`).join('')}</ul>`;
 
+  if(MODE==='study'){
+    who += `<h3 class="blk">참고 — 이 유형이 강한 분야</h3>
+      <p class="hint" style="margin:-6px 0 14px">이번 캠프는 <b>공부하는 방법</b>이 주제라 진로는 깊게 다루지 않습니다.
+         아래는 <b>참고용</b>이고, 여기 없는 일을 해도 전혀 문제없습니다.</p>
+      <table class="t"><tbody>${CAREER_MAP[p.top1].map(([k,v])=>
+        `<tr><td class="k">${k}</td><td>${v}</td></tr>`).join('')}</tbody></table>`;
+  }
   if(on('02')) H.push(sec(num(),'Identity','나는 이런 사람입니다','', who, 'alt'));
 
   /* ---------- 03 학습 과학 (다크) ---------- */
@@ -2245,6 +2345,17 @@ function renderReport(p){
         <td>${QUIT_RISK[c].items.join(' · ')}</td></tr>`;
     }).join('')}</tbody></table>
     <div class="warnbox" style="margin-top:18px">${md(qr.why)}</div>`;
+  }
+
+  /* ── 1·2순위 조합 — 내 우성 두뇌 두 개가 함께 작동하는 방식 ── */
+  const csk = comboStudyKey(p);
+  if(csk && !BRIEF){
+    const cs = COMBO_STUDY[csk];
+    entry += `<h3 class="blk">내 우성 두뇌 두 개 — ${cs.name}</h3>
+      <p>1순위 <b>${KB[p.top1].nick}(${s[p.top1]})</b> · 2순위 <b>${KB[p.top2].nick}(${s[p.top2]})</b>.
+         ${md(cs.line)}</p>
+      <ol class="step">${cs.how.map(t=>`<li>${md(t)}</li>`).join('')}</ol>
+      <div class="warnbox" style="margin-top:16px">${md(cs.warn)}</div>`;
   }
 
   /* ── 세 가지 처방 (블로그 약속: 암기 · 복습 · 필기) ── */
@@ -2425,9 +2536,33 @@ function renderReport(p){
       `<h3 class="blk">${PLAN4.title}</h3><p>${md(PLAN4.lead)}</p>
        <table class="t"><tbody>${PLAN4.rows.map(r=>
          `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
-       ${notepad('plan4', PLAN4.padTitle, PLAN4.padLead, PLAN4.padPh)}` +
+       ${notepad('plan4', PLAN4.padTitle, PLAN4.padLead, PLAN4.padPh)}
+       <h3 class="blk">${SUBJECT_PLAN.title}</h3><p>${md(SUBJECT_PLAN.lead)}</p>
+       <table class="t"><thead><tr>${SUBJECT_PLAN.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+         <tbody><tr>${SUBJECT_PLAN.sample.map((x,i)=>
+           `<td${i===0?' class="k"':''}>${x}</td>`).join('')}</tr></tbody></table>
+       <p class="src" style="margin-top:8px">↑ 예시입니다. 아래에 내 과목으로 적으세요.</p>
+       ${notepad('subj', SUBJECT_PLAN.padTitle, SUBJECT_PLAN.padLead, SUBJECT_PLAN.padPh)}` +
       make.slice(make.indexOf('<h3 class="blk">'+PRESENT_TALK.title));
   }
+  /* 진로 캠프 — 툴 결과를 AI 에 넘겨 더 깊이 파는 단계 */
+  if(MODE!=='study'){
+    const A2=AI_DEEP;
+    H.push(sec(num(),'Go Deeper', A2.title, '',
+      `<p>${md(A2.lead)}</p>
+       <div class="warnbox">${md(A2.privacy)}</div>
+       <div class="promptbox"><pre id="aiPrompt">${esc(studentPrompt(p))}</pre></div>
+       <div class="btnrow noprint" style="margin-top:12px">
+         <button class="btn sm" onclick="copyAiPrompt()">${A2.copy}</button>
+         <span id="cpMsg" class="hint" style="margin-left:8px"></span>
+       </div>
+       <h3 class="blk">${A2.checkTitle}</h3><p>${md(A2.checkLead)}</p>
+       <table class="t"><tbody>${A2.checks.map(r=>
+         `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+       <div class="warnbox" style="margin-top:18px">${md(A2.warn)}</div>
+       ${notepad('aideep', A2.padTitle, A2.padLead, A2.padPh)}`, 'alt'));
+  }
+
   H.push(`<a id="gs3"></a>`+sec(num(), pr.kicker, pr.title, '', make, 'alt'));
 
   /* 5·6차시 — 직접 해보기 (6차시 과정에서만) */
@@ -2886,6 +3021,56 @@ function printSheet(){
   window.addEventListener('afterprint', off);
   setTimeout(()=>window.print(), 60);
   setTimeout(off, 4000);   /* afterprint 가 안 오는 브라우저 대비 */
+}
+
+/* ==================================================================
+   학생이 AI 에 붙여넣을 프롬프트
+   ------------------------------------------------------------------
+   ⚠️ 이름·학교는 넣지 않는다. 점수와 방향만으로 충분하다.
+   ================================================================== */
+const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function studentPrompt(p){
+  const s=p.scores, A=KB[p.top1], B=KB[p.top2];
+  const cb = p.usePair ? COMBO[p.pairKey] : null;
+  return `나는 ${GRADE[p.grade]}이야. HBTS 뇌 사고유형 검사를 받았고 결과는 아래와 같아.
+
+[검사 결과]
+${ORDER.map(c=>`${KB[c].ko}(${KB[c].nick}) ${s[c]}점`).join('\n')}
+가장 높은 곳: ${A.nick} ${s[p.top1]}점
+두 번째: ${B.nick} ${s[p.top2]}점
+가장 낮은 곳: ${KB[p.low].nick} ${s[p.low]}점
+외향성:내향성 = ${p.ex}:${p.inv}
+${cb?`두 강점이 겹치는 자리: ${cb.name} — ${cb.desc}`:''}
+
+[내가 힘이 나는 방식]
+${WORK_STYLE[p.top1]}
+
+너는 진로 상담 전문가야. 아래 네 가지를 꼭 지켜줘.
+1. 직업 하나로 확정하지 마. 후보를 넓혔다가 좁히는 걸 도와줘.
+2. 연봉·전망·합격선 같은 숫자는 확실하지 않으면 "직접 확인이 필요하다"고 말해줘.
+3. ${GRADE[p.grade]}이 알아들을 수 있는 말로, 짧게.
+4. 답을 준 다음에는 나한테 되물어줘. 내가 스스로 생각하게.
+
+준비됐으면 "준비됐어"라고만 답해줘. 내가 하나씩 물어볼게.`;
+}
+
+function copyAiPrompt(){
+  const el = $('aiPrompt'); if(!el) return;
+  const t = el.textContent;
+  const done = ()=>{ const m=$('cpMsg'); if(m){ m.textContent=AI_DEEP.copied;
+    setTimeout(()=>{ m.textContent=''; }, 3000); } };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done).catch(()=>fallbackCopy(t,done));
+  } else fallbackCopy(t,done);
+}
+function fallbackCopy(t, done){
+  const ta=document.createElement('textarea');
+  ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); done(); }
+  catch(e){ const m=$('cpMsg'); if(m) m.textContent='복사가 안 됩니다 — 글상자를 직접 드래그해 복사하세요'; }
+  document.body.removeChild(ta);
 }
 
 /* ===== verify.js ===== */
