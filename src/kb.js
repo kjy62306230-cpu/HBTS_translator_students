@@ -26,7 +26,7 @@ LAB: {
   code:'LAB', ko:'좌측전뇌', en:'Left Anterior Brain', color:'#F2C21B',
   short:'논리 · 분석 · 수학 · 기획',
   tag:'목표지향적',
-  nick:'분석 · 논리 · 전략형',
+  nick:'분석·전략형',
   oneLine:'데이터와 논리로 목표를 세우고, 분석과 전략으로 밀고 가는 쪽',
 
   /* 결과지 p7 + 자료 p4 */
@@ -90,7 +90,7 @@ LPB: {
   code:'LPB', ko:'좌측후뇌', en:'Left Posterior Brain', color:'#29ABE2',
   short:'순차 · 절차 · 반복 · 시간엄수',
   tag:'원칙지향적',
-  nick:'절차 · 안정 · 반복형',
+  nick:'절차·반복형',
   oneLine:'정해진 순서를 정확하게, 꾸준히 끝까지 해내는 쪽',
 
   traits:[
@@ -132,7 +132,7 @@ RAB: {
   code:'RAB', ko:'우측전뇌', en:'Right Anterior Brain', color:'#EE8B1E',
   short:'시각 · 공간 · 창의 · 변화',
   tag:'변화/창조지향적',
-  nick:'창의 · 직관 · 자율형',
+  nick:'창의·직관형',
   oneLine:'머릿속에 그림이 먼저 그려지고, 없던 걸 만들어내는 쪽',
 
   /* ★ 자료 p13 (원문 라벨 「우측 후뇌」 — 교정함) */
@@ -180,7 +180,7 @@ RPB: {
   code:'RPB', ko:'우측후뇌', en:'Right Posterior Brain', color:'#A8CF45',
   short:'사람 · 공감 · 화합 · 감성',
   tag:'화합/감성지향적',
-  nick:'공감 · 소통 · 관계형',
+  nick:'감성·공감형',
   oneLine:'사람의 마음이 먼저 보이고, 관계 속에서 힘이 나는 쪽',
 
   /* ★ 자료 p10 (원문 라벨 「우측 전뇌」 — 교정함) + 결과지 p10 */

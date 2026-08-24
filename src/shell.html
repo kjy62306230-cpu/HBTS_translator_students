@@ -364,6 +364,16 @@ section.dark table.tmap thead th{color:rgba(244,241,234,.5);border-bottom-color:
 .npbox:focus{border-style:solid;border-color:var(--moss);background:#fff;
   box-shadow:0 0 0 3px rgba(46,125,91,.10)}
 .npbox:empty::before{content:attr(data-ph);color:#B3ADA0}
+/* 표 안에서 받아적는 칸 */
+td.pcell{outline:none;background:rgba(46,125,91,.045);
+  border-bottom:1px dashed #B9C9BE!important;cursor:text;min-width:90px}
+td.pcell:hover{background:rgba(46,125,91,.09)}
+td.pcell:focus{background:#fff;border-bottom:1px solid var(--moss)!important;
+  box-shadow:inset 0 0 0 2px rgba(46,125,91,.13)}
+td.pcell:empty::before{content:attr(data-ph);color:#B3ADA0;font-size:12.5px}
+section.dark td.pcell{background:rgba(244,241,234,.06);border-bottom-color:rgba(244,241,234,.3)!important}
+section.dark td.pcell:focus{background:rgba(244,241,234,.13)}
+section.dark td.pcell:empty::before{color:rgba(244,241,234,.4)}
 section.dark .npbox{background:rgba(244,241,234,.06);color:#F4F1EA;border-color:rgba(244,241,234,.3)}
 section.dark .npbox:focus{background:rgba(244,241,234,.11);border-color:#9FC7AF;
   box-shadow:0 0 0 3px rgba(159,199,175,.16)}
@@ -392,6 +402,23 @@ section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
 .wsn u{display:block;height:31px;border-bottom:1px solid #C9C2B4;text-decoration:none}
 .wsx{font-size:12.5px;color:#6E675C;margin:6px 0 18px}
 
+/* 진행 안내 — 수업 뒤에 여는 화면의 첫 블록 */
+section.guide{background:var(--forest);color:#F4F1EA;padding:34px 0 38px}
+.gh{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#9FC7AF;
+  font-weight:700;margin-bottom:12px}
+.gl{font-size:15.5px;line-height:1.75;color:rgba(244,241,234,.88);margin:0 0 22px;max-width:640px}
+.gl b{color:#fff}
+.gsteps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.gsteps a{display:block;text-decoration:none;border:1px solid rgba(244,241,234,.26);
+  border-radius:3px;padding:16px 18px 18px;transition:.15s}
+.gsteps a:hover{background:rgba(244,241,234,.09);border-color:#9FC7AF}
+.gsteps i{display:block;font-style:normal;font-size:20px;color:#9FC7AF;font-weight:700;margin-bottom:6px}
+.gsteps b{display:block;font-size:17px;color:#fff;letter-spacing:-.02em;margin-bottom:5px}
+.gsteps span{display:block;font-size:12.5px;line-height:1.6;color:rgba(244,241,234,.66)}
+.gn{font-size:13px;color:rgba(244,241,234,.7);margin:20px 0 0}
+.gn b{color:#9FC7AF}
+@media(max-width:680px){ .gsteps{grid-template-columns:1fr} }
+
 @media print{
   body{background:#fff;font-size:10.5pt;line-height:1.62}
   body::before{display:none}
@@ -419,6 +446,8 @@ section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
   .notepad{break-inside:avoid;background:transparent}
   /* 안 쓴 칸은 인쇄할 때 손으로 쓸 수 있게 줄만 남긴다 */
   .npbox{border-style:solid;border-color:#D6CFC0;background:transparent;min-height:120px}
+  td.pcell{background:transparent;border-bottom:1px solid #C9C2B4!important}
+  td.pcell:empty::before{content:''}
   .npbox:empty::before{content:''}
   .npst{display:none}
   .callout,.pull,.warnbox,.mission,.geo,.mcard,.entry,

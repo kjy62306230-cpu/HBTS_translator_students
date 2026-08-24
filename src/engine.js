@@ -276,7 +276,22 @@ function renderReport(p){
     <p style="margin-bottom:0">네 방식을 두루 쓸 수 있다는 뜻입니다. 다만 <b>다 잘한다는 건 우선순위를 정하기 어렵다는 뜻</b>이기도 합니다.
     이 경우 검사보다 <b>실제로 해봤을 때 덜 지치는 쪽</b>이 더 정확한 기준이 됩니다.</p></div>`;
 
-  if(on('01')) H.push(sec(num(),'Profile','두뇌 프로파일','',pf));
+  /* ── 진행 안내 — 4차시에 학생이 화면에서 길을 잃지 않게 ──
+     이 설계서는 수업을 다 듣고 난 뒤에 여는 도구다.
+     22장을 처음부터 읽는 게 아니라 「지금 할 것」만 짚어준다. */
+  H.push(`<section class="sec guide noprint"><div class="wrap">
+    <div class="gh">오늘 이 순서로 보세요</div>
+    <p class="gl">이 설계서는 <b>수업에서 들은 내용을 내 점수로 다시 보는</b> 자료입니다.
+       처음부터 다 읽지 마세요. 아래 세 단계면 충분합니다.</p>
+    <div class="gsteps">
+      <a href="#gs1"><i>①</i><b>확인</b><span>5분 — 들은 해석이 내 숫자에서 어떻게 보이나</span></a>
+      <a href="#gs2"><i>②</i><b>정리</b><span>10분 — 네 유형 중 내 학습법</span></a>
+      <a href="#gs3"><i>③</i><b>작성</b><span>20분 — 여기부터는 직접 씁니다</span></a>
+    </div>
+    <p class="gn">③은 <b>읽는 곳이 아니라 쓰는 곳</b>입니다. 오늘의 결과물이 거기서 나옵니다.</p>
+  </div></section>`);
+
+  if(on('01')) H.push(`<a id="gs1"></a>`+sec(num(),'Profile','두뇌 프로파일','',pf));
 
   /* ---------- 02 나는 이런 사람 ---------- */
   let who = `<h3 class="blk">${A.ko}(${p.top1}) ${s[p.top1]}점 — ${A.nick}</h3>
@@ -352,7 +367,9 @@ function renderReport(p){
   const qr = QUIT_RISK[p.top1];
   entry += `<h3 class="blk">유형별 거부 반응</h3>
     <p>같은 말이 어떤 학생에게는 자유이고, 어떤 학생에게는 불안입니다.
-       <b>「알아서 해봐」가 어떤 학생에게는 최악</b>입니다. ●가 이 학생의 자리입니다.</p>
+       <b>「알아서 해봐」가 어떤 학생에게는 최악</b>입니다.</p>
+    <p class="hint" style="margin:-6px 0 14px">●가 이 학생의 자리입니다.
+       나머지 세 줄은 <b>수업에서 들은 내용을 다시 확인</b>하는 용도입니다.</p>
     <table class="t tmap"><thead><tr>
       <th style="width:150px">유형</th><th>이렇게 시키면 손을 놓습니다</th>
     </tr></thead><tbody>${ORDER.map(c=>{
@@ -367,6 +384,8 @@ function renderReport(p){
   const PX = PRESCRIPTION;
   entry += `<h3 class="blk">${PX.title}</h3>
     <p>${md(PX.lead)}</p>
+    <p class="hint" style="margin:-6px 0 14px">●가 이 학생의 자리입니다.
+       나머지도 <b>필요하면 언제든 꺼내 쓰는 것</b>이지 못 쓰는 게 아닙니다.</p>
     <table class="t tmap"><thead><tr>${PX.cols.map((c,i)=>
       `<th${i===0?' style="width:150px"':''}>${c}</th>`).join('')}</tr></thead>
       <tbody>${ORDER.map(c=>{
@@ -394,7 +413,7 @@ function renderReport(p){
     <table class="t"><tbody>${DAILY.rows.map(r=>`<tr><td class="k">${r[0]}</td><td class="v">${r[1]}</td></tr>`).join('')}</tbody></table>
     <p>${md(DAILY.note)}</p><p class="src">${DAILY.src}</p>`;
 
-  if(on('04')) H.push(sec(num(),'Entry Point',`${en.label}`,
+  if(on('04')) H.push(`<a id="gs2"></a>`+sec(num(),'Entry Point',`${en.label}`,
     '위 네 가지를 **어떤 모습으로 시작하면 이 학생이 첫 주에 포기하지 않을지**에 대한 제안입니다.',
     entry));
 
@@ -539,7 +558,7 @@ function renderReport(p){
        ${notepad('plan4', PLAN4.padTitle, PLAN4.padLead, PLAN4.padPh)}` +
       make.slice(make.indexOf('<h3 class="blk">'+PRESENT_TALK.title));
   }
-  H.push(sec(num(), pr.kicker, pr.title, '', make, 'alt'));
+  H.push(`<a id="gs3"></a>`+sec(num(), pr.kicker, pr.title, '', make, 'alt'));
 
   /* 5·6차시 — 직접 해보기 (6차시 과정에서만) */
   if(p.six){
@@ -906,6 +925,15 @@ function notepad(id, title, lead, ph){
          oninput="padSave('${id}')">${saved}</div>
   </div>`;
 }
+/* 표 안에서 받아적는 칸 — 강사 PPT 를 들으며 학생이 채운다.
+   내 유형 행은 이미 채워져 있고, 나머지 유형은 비어 있다.
+   종이에 답을 다 적어주면 받아적을 이유가 없어지고 수업이 죽는다. */
+function padCell(id, ph){
+  let saved=''; try{ saved = localStorage.getItem(padKey(id)) || '' }catch(e){}
+  return `<td class="pcell" data-pad="${id}" id="np_${id}" contenteditable="true"
+    spellcheck="false" data-ph="${ph||''}" oninput="padSave('${id}')">${saved}</td>`;
+}
+
 let PAD_T = {};
 function padSave(id){
   const el = $('np_'+id); if(!el) return;
@@ -919,9 +947,9 @@ function padSave(id){
   }, 400);
 }
 function padClearAll(){
-  const pads = document.querySelectorAll('#report .npbox');
-  if(!pads.length) return;
-  document.querySelectorAll('#report .notepad').forEach(n=>{
+  const all = document.querySelectorAll('#report [data-pad]');
+  if(!all.length) return;
+  all.forEach(n=>{
     const id = n.getAttribute('data-pad');
     try{ localStorage.removeItem(padKey(id)) }catch(e){}
     const b = $('np_'+id); if(b) b.innerHTML='';
