@@ -74,6 +74,7 @@ function buildProfile(){
 
   return { name:$('name').value.trim()||'학생', grade:$('grade').value,
     mode: ($('mode')&&$('mode').value)||'both',
+    six: !!($('six')&&$('six').checked),
     scores:s, child:hasChild?child:null, shift,
     sorted, comp, kind, top1, top2, low, gap12, spread,
     diagOfTop, diagIsLowest, pairKey, usePair, ex, inv, eiKey,
@@ -334,54 +335,52 @@ function renderReport(p){
   let entry = `<p>${md(en.intro)}</p>
     <div class="entry">${en.map.map(([k,v])=>`<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>`;
 
-  /* 먼저 잡을 도구 — 효과가 아니라 「손이 가느냐」로 고른 것 */
-  const ft = FIRST_TOOLS[p.top1];
-  entry += `<h3 class="blk">먼저 잡을 도구 셋</h3>
-    <p>${md(ft.lead)}</p>
-    <div class="entry">${ft.items.map(([k,v])=>
-      `<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>`;
-
-  /* 그만두게 만드는 방식 — 이 섹션에서 가장 값어치 있는 부분 */
-  const qr = QUIT_RISK[p.top1];
-  entry += `<div class="warnbox" style="margin-top:26px"><b>${qr.title}</b>
-    <ul class="pl" style="margin:10px 0 10px">${qr.items.map(t=>`<li>${md(t)}</li>`).join('')}</ul>
-    ${md(qr.why)}</div>`;
-
-  /* 공통 도구함 — 좋은 방법을 유형에 가두지 않는다 */
-  entry += `<h3 class="blk">${TOOLBOX.title}</h3>
-    <p>${md(TOOLBOX.lead)}</p>
-    <table class="t"><tbody>${TOOLBOX.items.map(([k,v])=>
-      `<tr><td class="k">${k}</td><td>${md(v)}</td></tr>`).join('')}</tbody></table>
-    <p class="src" style="margin-top:12px">${md(TOOLBOX.note)}</p>`;
-
-  /* ★ 내 공부 흐름 — 종이의 핵심. 강사 PPT 는 공통 4기법을 다루고,
-     이 종이는 그 4기법을 이 학생의 형식으로 짠 흐름을 준다. */
+  /* ★ 내 공부 흐름 — 4기법을 이 학생의 형식으로 짠 것 */
   const fl = FLOW[p.top1];
   entry += `<h3 class="blk">${fl.day.title}</h3>
     <p>강사 설명에서 들은 <b>네 가지 기법</b>이 이 흐름 안에 전부 들어 있습니다.
        달라지는 것은 <b>순서와 형식</b>뿐입니다.</p>
     <table class="t"><tbody>${fl.day.rows.map(r=>
       `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
-
     <h3 class="blk">${fl.week.title}</h3>
     <table class="t"><tbody>${fl.week.rows.map(r=>
       `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
     <div class="pull" style="margin-top:18px">${md(fl.key)}</div>`;
 
-  /* 도구 전체 지도 — 네 유형을 다 보여주되 내 것만 표시한다 */
-  entry += `<h3 class="blk">${TOOL_MAP.title}</h3>
-    <p>${md(TOOL_MAP.lead)}</p>
+  /* ── 유형별 거부 반응 (네 유형 전부 · 내 것 표시) ──
+     블로그의 「실제로 이런 차이가 있습니다」에 해당한다. */
+  const qr = QUIT_RISK[p.top1];
+  entry += `<h3 class="blk">유형별 거부 반응</h3>
+    <p>같은 말이 어떤 학생에게는 자유이고, 어떤 학생에게는 불안입니다.
+       <b>「알아서 해봐」가 어떤 학생에게는 최악</b>입니다. ●가 이 학생의 자리입니다.</p>
     <table class="t tmap"><thead><tr>
-      <th style="width:112px">유형</th><th>먼저 잡는 도구</th><th style="width:34%">이렇게 시키면 손을 놓습니다</th>
+      <th style="width:150px">유형</th><th>이렇게 시키면 손을 놓습니다</th>
     </tr></thead><tbody>${ORDER.map(c=>{
-      const mine = (c===p.top1);
+      const mine=(c===p.top1);
       return `<tr${mine?' class="mine"':''}>
-        <td class="k">${mine?'● ':''}${KB[c].ko}<span class="code">${c}</span></td>
-        <td>${FIRST_TOOLS[c].items.map(x=>x[0]).join(' · ')}</td>
-        <td>${QUIT_RISK[c].items.slice(0,2).join(' · ')} 등</td></tr>`;
+        <td class="k">${mine?'● ':''}${KB[c].nick.replace(/ · /g,'·')}<span class="code">${c}</span></td>
+        <td>${QUIT_RISK[c].items.join(' · ')}</td></tr>`;
     }).join('')}</tbody></table>
-    <p class="src" style="margin-top:12px">${md(TOOL_MAP.note)}</p>
-    ${notepad('tools', TOOL_MAP.noteTitle, TOOL_MAP.noteLead, '예) 체크리스트로 관리 — 수학 오답노트에 먼저 써보기')}`;
+    <div class="warnbox" style="margin-top:18px">${md(qr.why)}</div>`;
+
+  /* ── 세 가지 처방 (블로그 약속: 암기 · 복습 · 필기) ── */
+  const PX = PRESCRIPTION;
+  entry += `<h3 class="blk">${PX.title}</h3>
+    <p>${md(PX.lead)}</p>
+    <table class="t tmap"><thead><tr>${PX.cols.map((c,i)=>
+      `<th${i===0?' style="width:150px"':''}>${c}</th>`).join('')}</tr></thead>
+      <tbody>${ORDER.map(c=>{
+        const mine=(c===p.top1);
+        return `<tr${mine?' class="mine"':''}>
+          <td class="k">${mine?'● ':''}${KB[c].nick.replace(/ · /g,'·')}<span class="code">${c}</span></td>
+          ${PX.rows[c].map(x=>`<td>${x}</td>`).join('')}</tr>`;
+      }).join('')}</tbody></table>
+
+    <h4 class="mini" style="margin-top:24px">이 학생의 세 가지 — 어떻게 하는 건가</h4>
+    <div class="entry">${PX.how[p.top1].map(([k,v])=>
+      `<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>
+    <div class="pull" style="margin-top:18px">${md(PX.open)}</div>
+    ${notepad('pick', PX.pick, PX.pickLead, PX.pickPh)}`;
 
   const ei=EI[p.eiKey];
   entry += `<h3 class="blk">외향성 ${p.ex} : 내향성 ${p.inv} — ${ei.title}</h3>
@@ -529,7 +528,30 @@ function renderReport(p){
      <table class="t"><tbody>${PRESENT_TALK.rows.map(r=>
        `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
      <div class="pull" style="margin-top:16px">${md(PRESENT_TALK.note)}</div>`;
+
+  /* 4주 플랜 — 「남는 것」으로 약속된 산출물. 학습이 들어가는 과정에만. */
+  if(MODE!=='career'){
+    make = `<p>${md(pr.lead)}</p>` +
+      pr.pads.map(([id,t,lead,ph])=>notepad(id,t,lead,ph)).join('') +
+      `<h3 class="blk">${PLAN4.title}</h3><p>${md(PLAN4.lead)}</p>
+       <table class="t"><tbody>${PLAN4.rows.map(r=>
+         `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+       ${notepad('plan4', PLAN4.padTitle, PLAN4.padLead, PLAN4.padPh)}` +
+      make.slice(make.indexOf('<h3 class="blk">'+PRESENT_TALK.title));
+  }
   H.push(sec(num(), pr.kicker, pr.title, '', make, 'alt'));
+
+  /* 5·6차시 — 직접 해보기 (6차시 과정에서만) */
+  if(p.six){
+    const T=TRY_OUT;
+    H.push(sec(num(),'Try It Out', T.title, '',
+      `<p>${md(T.lead)}</p>
+       <table class="t"><tbody>${T.rows.map(r=>
+         `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+       <div class="callout" style="margin-top:18px"><h5>왜 느낌이 아니라 숫자인가</h5>
+         <p style="margin-bottom:0">${md(T.note)}</p></div>
+       ${notepad('tryout', T.padTitle, T.padLead, T.padPh)}`));
+  }
 
   if(on('09')) H.push(sec(num(),'Method', SCIENCE_NOTE.title, '',
     SCIENCE_NOTE.body.map(b=>`<p>${md(b)}</p>`).join('') +

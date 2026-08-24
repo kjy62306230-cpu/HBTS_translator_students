@@ -506,6 +506,10 @@ section.dark .nplines i{border-bottom-color:rgba(244,241,234,.22)}
         <option value="both" selected>학업 로드맵 캠프 (6차시 · 결합)</option>
       </select>
       <p class="hint">고른 캠프에 맞춰 설계서에 들어갈 내용이 달라집니다.</p>
+      <label style="display:flex;align-items:center;gap:9px;margin-top:14px;cursor:pointer;font-weight:500">
+        <input type="checkbox" id="six" style="width:16px;height:16px;accent-color:#2E7D5B;margin:0">
+        <span>6차시 과정 — 「직접 해보기」 실습 포함</span></label>
+      <p class="hint">배운 방법을 그 자리에서 써보고 결과를 비교하는 5·6차시가 추가됩니다.</p>
     </div>
   </div>
 
@@ -1125,7 +1129,7 @@ const CORE = [
 /* ---------- 유형별 「진입로」 — 기법은 같고 형식만 다름 ---------- */
 const ENTRY = {
 LAB:{
-  label:'분석형의 진입로',
+  label:'분석·전략형의 진입로',
   intro:'아래 네 가지는 **모든 학생이 똑같이** 하는 것입니다. 다만 이 학생은 **이런 모습으로 시작하면** 첫날에 포기하지 않을 가능성이 큽니다.',
   map:[
     ['꺼내기',  '백지에 그냥 쓰지 말고 **비교표**를 그려서 꺼내세요. 「A는 이렇고 B는 이렇다」 형식이면 손이 움직입니다.'],
@@ -1135,7 +1139,7 @@ LAB:{
   ]
 },
 LPB:{
-  label:'성실형의 진입로',
+  label:'절차·반복형의 진입로',
   intro:'아래 네 가지는 **모든 학생이 똑같이** 하는 것입니다. 다만 이 학생은 **이런 모습으로 시작하면** 첫날에 포기하지 않을 가능성이 큽니다.',
   map:[
     ['꺼내기',  '**체크리스트 형식**으로 꺼내세요. 항목에 하나씩 체크가 채워지는 게 보이면 계속하게 됩니다.'],
@@ -1145,7 +1149,7 @@ LPB:{
   ]
 },
 RAB:{
-  label:'창의형의 진입로',
+  label:'창의·직관형의 진입로',
   intro:'아래 네 가지는 **모든 학생이 똑같이** 하는 것입니다. 다만 이 학생은 **이런 모습으로 시작하면** 첫날에 포기하지 않을 가능성이 큽니다.',
   map:[
     ['꺼내기',  '백지에 글로 쓰지 말고 **도식·마인드맵으로** 꺼내세요. 화살표와 상자로 그리면 손이 먼저 움직입니다.'],
@@ -1155,7 +1159,7 @@ RAB:{
   ]
 },
 RPB:{
-  label:'공감형의 진입로',
+  label:'감성·공감형의 진입로',
   intro:'아래 네 가지는 **모든 학생이 똑같이** 하는 것입니다. 다만 이 학생은 **이런 모습으로 시작하면** 첫날에 포기하지 않을 가능성이 큽니다.',
   map:[
     ['꺼내기',  '**친구나 가족에게 설명하면서** 꺼내세요. 사람이 앞에 있으면 이 학생은 훨씬 오래 버팁니다.'],
@@ -1441,6 +1445,81 @@ RPB:{
   ]},
   key:'이 학생에게 가장 중요한 한 줄 — **비교하지 마세요.** 다른 사람과 견주는 순간 이 학생의 집중은 끊깁니다.'
 }
+};
+
+/* ==================================================================
+   3차시 — 유형별 학습법 전체 소개 · 나의 선택
+   ------------------------------------------------------------------
+   블로그에 공개한 상품 설명에 「세 가지를 다르게 안내한다」고 명시돼 있다.
+     암기 전략  구조화 / 반복 / 이미지·연상 / 스토리텔링
+     복습 전략  장기 / 누적 / 단기 집중 / 함께
+     노트 필기  개념도 / 복습노트 / 마인드맵 / 스토리텔링
+   진로부장이 이 문구를 근거로 품의를 올린다. 실물에 없으면 안 된다.
+
+   다만 프레이밍은 지킨다 — 「더 잘 외워진다」가 아니라
+   「먼저 잡기 좋다 · 나머지도 열려 있다」로 쓴다.
+   블로그도 「유형별 거부 반응」을 앞세우고 있어 프레임이 어긋나지 않는다.
+   ================================================================== */
+const PRESCRIPTION = {
+  title:'세 가지 처방 — 암기 · 복습 · 필기',
+  lead:'같은 4기법이라도 **어떤 형태로 하느냐**는 사람마다 다릅니다. 아래는 네 유형에 각각 권하는 형태입니다. **●가 이 학생의 자리**입니다.',
+  cols:['유형','암기','복습','노트 필기'],
+  rows:{
+    LAB:['구조화 암기','장기 복습','개념도 필기'],
+    LPB:['반복 암기','누적 복습','복습노트 필기'],
+    RAB:['이미지·연상 암기','단기 집중 복습','마인드맵 필기'],
+    RPB:['스토리텔링 암기','함께 복습','스토리텔링 필기']
+  },
+  how:{
+    LAB:[['구조화 암기','외울 것을 **표·계통도로 묶어서** 봅니다. 낱개로 흩어져 있으면 이 학생은 안 외웁니다.'],
+         ['장기 복습','한 번에 몰지 않고 **간격을 벌려** 여러 번 만납니다. 왜 그런지 이해한 것은 오래갑니다.'],
+         ['개념도 필기','개념 사이 **관계를 선으로** 그립니다. 정의를 베끼는 필기는 남지 않습니다.']],
+    LPB:[['반복 암기','**같은 형식으로 여러 번** 돕니다. 방법을 바꾸지 않는 것이 이 학생에게는 강점입니다.'],
+         ['누적 복습','오늘 것에 **어제 것을 더해서** 봅니다. 쌓이는 게 보이면 계속합니다.'],
+         ['복습노트 필기','틀린 것·헷갈린 것만 모으는 **전용 노트 한 권**을 둡니다.']],
+    RAB:[['이미지·연상 암기','외울 것을 **그림이나 장면으로** 바꿉니다. 억지로 외우는 순간 흥미가 끊깁니다.'],
+         ['단기 집중 복습','**짧고 자주** 봅니다. 한 번에 오래 붙잡으면 이 학생은 도망갑니다.'],
+         ['마인드맵 필기','가운데서 **뻗어나가는 형태**로 적습니다. 줄글 필기는 손이 안 갑니다.']],
+    RPB:[['스토리텔링 암기','**이야기로 엮어서** 외웁니다. 사람·상황이 붙으면 오래 남습니다.'],
+         ['함께 복습','**서로 가르치는** 형태로 봅니다. 옆에 앉아만 있는 건 효과가 없습니다.'],
+         ['스토리텔링 필기','배운 것을 **누구에게 설명하듯** 문장으로 적습니다.']]
+  },
+  open:'⚠️ **다른 유형의 방법도 다 써도 됩니다.** 더 좋은 방법이라서 나눈 게 아니라, **어느 것에 먼저 손이 가느냐**가 다를 뿐입니다. 과목마다 잘 맞는 형태가 다르니 **섞어 쓰는 학생이 결국 가장 멀리 갑니다.**',
+  pick:'③ 나는 어떤 것부터 해볼까',
+  pickLead:'위 표를 보고 **이번에 실제로 해볼 것 하나씩**만 고르세요. 내 유형 것이 아니어도 괜찮습니다.',
+  pickPh:'암기 —\n복습 —\n필기 —'
+};
+
+/* 4주 플랜 — 「남는 것」으로 블로그에 명시된 산출물 */
+const PLAN4 = {
+  title:'나의 4주 플랜',
+  lead:'캠프가 끝나고 **손에 남는 것**입니다. 앞에서 고른 방법을 4주에 나눠 배치하세요. 욕심내지 말고 **지킬 수 있는 양**으로 적는 것이 핵심입니다.',
+  rows:[
+    ['1주차','**하나만 바꿉니다.** 위에서 고른 것 중 딱 하나. 나머지는 하던 대로.'],
+    ['2주차','1주차가 지켜졌으면 **하나를 더** 얹습니다. 안 지켜졌으면 같은 것을 한 주 더.'],
+    ['3주차','**과목을 넓힙니다.** 한 과목에서 되던 방법을 다른 과목에도 적용.'],
+    ['4주차','**점검.** 무엇이 남았고 무엇이 안 됐는지 적고, 다음 4주를 다시 짭니다.']
+  ],
+  padTitle:'④ 나의 4주 플랜 — 주차별로',
+  padLead:'위 틀을 보고 **내 과목·내 시간으로** 바꿔 적으세요.',
+  padPh:'1주차 —\n2주차 —\n3주차 —\n4주차 —'
+};
+
+/* 5·6차시 — 직접 해보기 (6차시 과정 전용) */
+const TRY_OUT = {
+  title:'직접 해보기 — 내 방식이 진짜 맞는지',
+  lead:'「너는 이런 방식이 맞아」는 흘려듣게 됩니다. **같은 과제를 각자 방식으로 해보고 결과를 비교하면** 스스로 납득합니다. 5·6차시에 이 표를 채웁니다.',
+  rows:[
+    ['① 과제 정하기','영단어 20개 · 개념 한 단원 · 지문 하나 — 강사가 정해줍니다.'],
+    ['② 내 방식으로','위에서 고른 **내 방식**으로 정해진 시간만큼 합니다.'],
+    ['③ 다른 방식으로','**다른 유형의 방식** 하나를 골라 같은 조건으로 합니다.'],
+    ['④ 같은 조건으로 확인','둘 다 **백지에 꺼내보고 개수를 셉니다.** 느낌이 아니라 숫자로.'],
+    ['⑤ 판단','**점수가 높은 쪽을 채택합니다.** 내 유형 것이 아니어도 상관없습니다.']
+  ],
+  note:'공부 직후의 **느낌은 자주 거짓말**을 합니다. 실험에서 다시 읽기를 한 학생들이 자기 기억에 더 자신 있어 했지만, 실제 점수는 가장 낮았습니다. 그래서 숫자로 정합니다.',
+  padTitle:'⑤ 해보고 나서 — 기록',
+  padLead:'두 방식을 비교한 결과와, 그래서 무엇을 택할지 적으세요.',
+  padPh:'내 방식 —      개 / 20개\n다른 방식 —      개 / 20개\n택할 것 —'
 };
 
 /* ===== roadmap.js ===== */
@@ -1812,6 +1891,7 @@ function buildProfile(){
 
   return { name:$('name').value.trim()||'학생', grade:$('grade').value,
     mode: ($('mode')&&$('mode').value)||'both',
+    six: !!($('six')&&$('six').checked),
     scores:s, child:hasChild?child:null, shift,
     sorted, comp, kind, top1, top2, low, gap12, spread,
     diagOfTop, diagIsLowest, pairKey, usePair, ex, inv, eiKey,
@@ -2072,54 +2152,52 @@ function renderReport(p){
   let entry = `<p>${md(en.intro)}</p>
     <div class="entry">${en.map.map(([k,v])=>`<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>`;
 
-  /* 먼저 잡을 도구 — 효과가 아니라 「손이 가느냐」로 고른 것 */
-  const ft = FIRST_TOOLS[p.top1];
-  entry += `<h3 class="blk">먼저 잡을 도구 셋</h3>
-    <p>${md(ft.lead)}</p>
-    <div class="entry">${ft.items.map(([k,v])=>
-      `<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>`;
-
-  /* 그만두게 만드는 방식 — 이 섹션에서 가장 값어치 있는 부분 */
-  const qr = QUIT_RISK[p.top1];
-  entry += `<div class="warnbox" style="margin-top:26px"><b>${qr.title}</b>
-    <ul class="pl" style="margin:10px 0 10px">${qr.items.map(t=>`<li>${md(t)}</li>`).join('')}</ul>
-    ${md(qr.why)}</div>`;
-
-  /* 공통 도구함 — 좋은 방법을 유형에 가두지 않는다 */
-  entry += `<h3 class="blk">${TOOLBOX.title}</h3>
-    <p>${md(TOOLBOX.lead)}</p>
-    <table class="t"><tbody>${TOOLBOX.items.map(([k,v])=>
-      `<tr><td class="k">${k}</td><td>${md(v)}</td></tr>`).join('')}</tbody></table>
-    <p class="src" style="margin-top:12px">${md(TOOLBOX.note)}</p>`;
-
-  /* ★ 내 공부 흐름 — 종이의 핵심. 강사 PPT 는 공통 4기법을 다루고,
-     이 종이는 그 4기법을 이 학생의 형식으로 짠 흐름을 준다. */
+  /* ★ 내 공부 흐름 — 4기법을 이 학생의 형식으로 짠 것 */
   const fl = FLOW[p.top1];
   entry += `<h3 class="blk">${fl.day.title}</h3>
     <p>강사 설명에서 들은 <b>네 가지 기법</b>이 이 흐름 안에 전부 들어 있습니다.
        달라지는 것은 <b>순서와 형식</b>뿐입니다.</p>
     <table class="t"><tbody>${fl.day.rows.map(r=>
       `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
-
     <h3 class="blk">${fl.week.title}</h3>
     <table class="t"><tbody>${fl.week.rows.map(r=>
       `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
     <div class="pull" style="margin-top:18px">${md(fl.key)}</div>`;
 
-  /* 도구 전체 지도 — 네 유형을 다 보여주되 내 것만 표시한다 */
-  entry += `<h3 class="blk">${TOOL_MAP.title}</h3>
-    <p>${md(TOOL_MAP.lead)}</p>
+  /* ── 유형별 거부 반응 (네 유형 전부 · 내 것 표시) ──
+     블로그의 「실제로 이런 차이가 있습니다」에 해당한다. */
+  const qr = QUIT_RISK[p.top1];
+  entry += `<h3 class="blk">유형별 거부 반응</h3>
+    <p>같은 말이 어떤 학생에게는 자유이고, 어떤 학생에게는 불안입니다.
+       <b>「알아서 해봐」가 어떤 학생에게는 최악</b>입니다. ●가 이 학생의 자리입니다.</p>
     <table class="t tmap"><thead><tr>
-      <th style="width:112px">유형</th><th>먼저 잡는 도구</th><th style="width:34%">이렇게 시키면 손을 놓습니다</th>
+      <th style="width:150px">유형</th><th>이렇게 시키면 손을 놓습니다</th>
     </tr></thead><tbody>${ORDER.map(c=>{
-      const mine = (c===p.top1);
+      const mine=(c===p.top1);
       return `<tr${mine?' class="mine"':''}>
-        <td class="k">${mine?'● ':''}${KB[c].ko}<span class="code">${c}</span></td>
-        <td>${FIRST_TOOLS[c].items.map(x=>x[0]).join(' · ')}</td>
-        <td>${QUIT_RISK[c].items.slice(0,2).join(' · ')} 등</td></tr>`;
+        <td class="k">${mine?'● ':''}${KB[c].nick.replace(/ · /g,'·')}<span class="code">${c}</span></td>
+        <td>${QUIT_RISK[c].items.join(' · ')}</td></tr>`;
     }).join('')}</tbody></table>
-    <p class="src" style="margin-top:12px">${md(TOOL_MAP.note)}</p>
-    ${notepad('tools', TOOL_MAP.noteTitle, TOOL_MAP.noteLead, '예) 체크리스트로 관리 — 수학 오답노트에 먼저 써보기')}`;
+    <div class="warnbox" style="margin-top:18px">${md(qr.why)}</div>`;
+
+  /* ── 세 가지 처방 (블로그 약속: 암기 · 복습 · 필기) ── */
+  const PX = PRESCRIPTION;
+  entry += `<h3 class="blk">${PX.title}</h3>
+    <p>${md(PX.lead)}</p>
+    <table class="t tmap"><thead><tr>${PX.cols.map((c,i)=>
+      `<th${i===0?' style="width:150px"':''}>${c}</th>`).join('')}</tr></thead>
+      <tbody>${ORDER.map(c=>{
+        const mine=(c===p.top1);
+        return `<tr${mine?' class="mine"':''}>
+          <td class="k">${mine?'● ':''}${KB[c].nick.replace(/ · /g,'·')}<span class="code">${c}</span></td>
+          ${PX.rows[c].map(x=>`<td>${x}</td>`).join('')}</tr>`;
+      }).join('')}</tbody></table>
+
+    <h4 class="mini" style="margin-top:24px">이 학생의 세 가지 — 어떻게 하는 건가</h4>
+    <div class="entry">${PX.how[p.top1].map(([k,v])=>
+      `<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>
+    <div class="pull" style="margin-top:18px">${md(PX.open)}</div>
+    ${notepad('pick', PX.pick, PX.pickLead, PX.pickPh)}`;
 
   const ei=EI[p.eiKey];
   entry += `<h3 class="blk">외향성 ${p.ex} : 내향성 ${p.inv} — ${ei.title}</h3>
@@ -2267,7 +2345,30 @@ function renderReport(p){
      <table class="t"><tbody>${PRESENT_TALK.rows.map(r=>
        `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
      <div class="pull" style="margin-top:16px">${md(PRESENT_TALK.note)}</div>`;
+
+  /* 4주 플랜 — 「남는 것」으로 약속된 산출물. 학습이 들어가는 과정에만. */
+  if(MODE!=='career'){
+    make = `<p>${md(pr.lead)}</p>` +
+      pr.pads.map(([id,t,lead,ph])=>notepad(id,t,lead,ph)).join('') +
+      `<h3 class="blk">${PLAN4.title}</h3><p>${md(PLAN4.lead)}</p>
+       <table class="t"><tbody>${PLAN4.rows.map(r=>
+         `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+       ${notepad('plan4', PLAN4.padTitle, PLAN4.padLead, PLAN4.padPh)}` +
+      make.slice(make.indexOf('<h3 class="blk">'+PRESENT_TALK.title));
+  }
   H.push(sec(num(), pr.kicker, pr.title, '', make, 'alt'));
+
+  /* 5·6차시 — 직접 해보기 (6차시 과정에서만) */
+  if(p.six){
+    const T=TRY_OUT;
+    H.push(sec(num(),'Try It Out', T.title, '',
+      `<p>${md(T.lead)}</p>
+       <table class="t"><tbody>${T.rows.map(r=>
+         `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+       <div class="callout" style="margin-top:18px"><h5>왜 느낌이 아니라 숫자인가</h5>
+         <p style="margin-bottom:0">${md(T.note)}</p></div>
+       ${notepad('tryout', T.padTitle, T.padLead, T.padPh)}`));
+  }
 
   if(on('09')) H.push(sec(num(),'Method', SCIENCE_NOTE.title, '',
     SCIENCE_NOTE.body.map(b=>`<p>${md(b)}</p>`).join('') +
