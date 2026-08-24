@@ -211,6 +211,7 @@ function generate(){
   $('input').style.display='none';
   $('result').style.display='block';
   window.scrollTo(0,0);
+  bumpStat(p.mode);          /* 사용 실적 — 개인정보 없이 건수만 */
 }
 function backToInput(){ $('result').style.display='none'; $('input').style.display='block'; window.scrollTo(0,0); }
 function toggleEdit(){
@@ -1133,3 +1134,112 @@ function fallbackCopy(t, done){
   catch(e){ const m=$('cpMsg'); if(m) m.textContent='복사가 안 됩니다 — 글상자를 직접 드래그해 복사하세요'; }
   document.body.removeChild(ta);
 }
+
+/* ==================================================================
+   입장 코드 · 사용 실적
+   ------------------------------------------------------------------
+   코드 하나가 세 가지를 한다.
+     ① 아무나 링크로 들어오는 것을 막는다
+     ② 캠프 종류·학년·6차시 여부를 코드가 정한다
+        (학생 30명이 각자 고르다 생기는 사고를 원천 차단)
+     ③ AI 호출 남용을 막는다
+   ================================================================== */
+const CAMP_URL = 'https://cqzqtjpukvalhwsqjpcg.supabase.co/functions/v1/camp';
+
+async function campCall(body){
+  const r = await fetch(CAMP_URL, {
+    method:'POST',
+    headers:{'content-type':'application/json',
+      'apikey': AI_PROXY_ANON, 'Authorization':'Bearer '+AI_PROXY_ANON},
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+function gateMsg(html, cls){
+  const el=$('gateMsg'); if(!el) return;
+  el.style.display='block'; el.className='upstat '+(cls||''); el.innerHTML=html;
+}
+function enterTool(){
+  $('gate').style.display='none';
+  $('input').style.display='block';
+  window.scrollTo(0,0);
+}
+function gateSkip(){
+  try{ sessionStorage.setItem('hbts_gate','teacher') }catch(e){}
+  setAdmin(true);
+  enterTool();
+}
+
+async function gateGo(){
+  const code = ($('gateCode').value||'').trim().toUpperCase();
+  if(!code){ gateMsg('코드를 넣어주세요.','warnst'); return; }
+  gateMsg('확인하는 중… <span class="spin"></span>');
+  try{
+    const j = await campCall({action:'check', code});
+    if(!j || !j.ok){
+      const why = {
+        notfound:'그런 코드가 없습니다. <b>대소문자·하이픈(-)</b>까지 정확히 넣어주세요.',
+        inactive:'지금은 닫혀 있는 코드입니다. 강사님께 확인해 주세요.',
+        early:'아직 열리지 않은 코드입니다. 캠프 시작일에 다시 시도해 주세요.',
+        expired:'기간이 지난 코드입니다. 강사님께 확인해 주세요.',
+        used_up:'사용 가능 인원을 넘었습니다. 강사님께 알려주세요.',
+        empty:'코드를 넣어주세요.'
+      }[j && j.reason] || '확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요.';
+      gateMsg(why,'err'); return;
+    }
+    /* 코드가 캠프 설정을 정한다 */
+    try{ sessionStorage.setItem('hbts_gate', JSON.stringify(j)) }catch(e){}
+    applyCamp(j);
+    enterTool();
+  }catch(e){
+    gateMsg(`확인에 실패했습니다. ${String(e.message||e)}<br>
+      인터넷 연결을 확인하고 다시 시도해 주세요.`,'err');
+  }
+}
+
+function applyCamp(j){
+  if($('mode') && j.mode) $('mode').value = j.mode;
+  if($('grade') && j.grade) $('grade').value = j.grade;
+  if($('six')) $('six').checked = !!j.six;
+  const box = $('campBadge');
+  if(box && j.label){
+    const nm = {career:'진로 캠프', study:'자기주도학습 캠프', both:'학업 로드맵 캠프'}[j.mode]||'';
+    box.innerHTML = `<b>${j.label}</b> · ${nm}${j.six?' (6차시)':''}`;
+    box.style.display='block';
+  }
+}
+
+/* 사용 실적 — 학교 제안 때 쓰는 숫자.
+   숫자가 작을 때 학생에게 보이면 오히려 역효과라 일정 수 넘어야 노출한다. */
+const STAT_MIN_SHOW = 100;
+async function loadStat(){
+  try{
+    const j = await campCall({action:'stats'});
+    const n = j && j.stats && Number(j.stats.reports);
+    if(!n) return;
+    const el = $('gateStat'); if(!el) return;
+    if(n >= STAT_MIN_SHOW || document.body.classList.contains('admin')){
+      el.innerHTML = `지금까지 <b>${n.toLocaleString()}명</b>의 학생이 이 도구로 설계서를 만들었습니다`
+        + (document.body.classList.contains('admin') && n < STAT_MIN_SHOW
+           ? `<i>강사에게만 보입니다 — ${STAT_MIN_SHOW}건을 넘으면 학생 화면에도 표시됩니다</i>` : '');
+    }
+  }catch(e){ /* 실적은 없어도 툴은 돈다 */ }
+}
+async function bumpStat(mode){
+  try{ await campCall({action:'made', mode}); }catch(e){}
+}
+
+/* 시작할 때 — 이미 들어온 세션이면 코드 화면을 건너뛴다 */
+(function(){
+  let g=null;
+  try{ g = sessionStorage.getItem('hbts_gate') }catch(e){}
+  if(g){
+    if(g==='teacher'){ setAdmin(true); enterTool(); }
+    else { try{ applyCamp(JSON.parse(g)) }catch(e){} enterTool(); }
+  }
+  const q = new URLSearchParams(location.search);
+  const c = q.get('code');
+  if(c && $('gateCode')){ $('gateCode').value = c.toUpperCase(); if(!g) gateGo(); }
+  loadStat();
+})();

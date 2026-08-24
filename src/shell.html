@@ -426,10 +426,24 @@ section.guide{background:var(--forest);color:#F4F1EA;padding:34px 0 38px}
   word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#3B372F}
 section.alt .promptbox{background:rgba(255,255,255,.72)}
 
+.campbadge{margin:0 0 -8px;font-size:12.5px;color:#6E675C;letter-spacing:.01em;
+  padding:7px 0 0}
+.campbadge b{color:var(--forest)}
+
+/* ── 입장 코드 화면 ── */
+.gatewrap{padding-top:52px;padding-bottom:70px;max-width:560px}
+.gatein{display:flex;gap:10px;align-items:stretch}
+.gatein input{flex:1;font-size:19px;letter-spacing:.08em;text-transform:uppercase;
+  font-weight:600;text-align:center;padding:15px 14px}
+.gatein .btn{white-space:nowrap}
+.gatestat{margin-top:30px;text-align:center;font-size:13px;color:#8A847A;letter-spacing:.01em}
+.gatestat b{color:var(--forest);font-weight:700}
+.gatestat i{display:block;font-style:normal;font-size:11.5px;color:#A9A296;margin-top:5px}
+
 @media print{
   body{background:#fff;font-size:10.5pt;line-height:1.62}
   body::before{display:none}
-  .masthead,.btnrow,.editbar,.noprint,#input,.modal,.drop,.upstat{display:none!important}
+  .masthead,.btnrow,.editbar,.noprint,#input,#gate,.modal,.drop,.upstat{display:none!important}
   .wrap{max-width:100%;padding:0}
   /* ★ 섹션 전체에 break-inside:avoid 를 걸면 한 장을 넘는 섹션이 통째로 밀려
      빈 페이지가 5장씩 생긴다. 섹션은 쪼개지게 두고, 안 쪼개질 「덩어리」만 지정한다. */
@@ -495,7 +509,30 @@ section.alt .promptbox{background:rgba(255,255,255,.72)}
 </div>
 
 <!-- ==================== 입력 ==================== -->
-<section id="input">
+<!-- ==================== 입장 코드 ==================== -->
+<section id="gate">
+  <div class="cover"><div class="wrap">
+    <div class="eyebrow">Human Brain Thinking Styles</div>
+    <h1>검사지 한 장이<br><span class="thin">삼 년치 설계도가 됩니다</span></h1>
+  </div></div>
+  <div class="wrap gatewrap">
+    <div class="fieldset">
+      <div class="fh"><b>입장 코드</b><span>강사님이 알려준 코드를 넣으세요</span></div>
+      <div class="gatein">
+        <input type="text" id="gateCode" placeholder="예) PGP-2601-A" autocomplete="off"
+               spellcheck="false" onkeydown="if(event.key==='Enter')gateGo()">
+        <button class="btn" onclick="gateGo()">들어가기</button>
+      </div>
+      <div class="upstat" id="gateMsg" style="display:none"></div>
+      <p class="hint" style="margin-top:16px">코드는 캠프마다 다릅니다.
+        코드가 캠프 종류와 학년을 자동으로 맞춰주니 <b>따로 고르지 않아도 됩니다.</b></p>
+    </div>
+    <p class="gatestat" id="gateStat"></p>
+    <p class="teachlink noprint"><a href="#" onclick="gateSkip();return false">강사용 — 코드 없이 들어가기</a></p>
+  </div>
+</section>
+
+<section id="input" style="display:none">
 <div class="cover"><div class="wrap">
   <div class="eyebrow">Human Brain Thinking Styles</div>
   <h1>검사지 한 장이<br><span class="thin">삼 년치 설계도가 됩니다</span></h1>
@@ -598,6 +635,7 @@ section.alt .promptbox{background:rgba(255,255,255,.72)}
       <span id="padMsg" class="hint" style="margin-left:6px"></span>
     </div>
   </div>
+  <div class="wrap noprint"><div class="campbadge" id="campBadge" style="display:none"></div></div>
   <div id="report"></div>
   <div id="sheet"></div>
 </section>
