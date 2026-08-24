@@ -2584,8 +2584,11 @@ function renderReport(p){
        ${notepad('subj', SUBJECT_PLAN.padTitle, SUBJECT_PLAN.padLead, SUBJECT_PLAN.padPh)}` +
       make.slice(make.indexOf('<h3 class="blk">'+PRESENT_TALK.title));
   }
-  /* 진로 캠프 — 툴 결과를 AI 에 넘겨 더 깊이 파는 단계 */
-  if(MODE!=='study'){
+  /* ── AI 활용은 진로 캠프 전용이다 ──
+     6차시(both)는 차시가 이미 꽉 차 있고, 그 상품의 값어치는
+     「그러려면 지금 공부는 이렇게」 칸에 있다.
+     AI 를 둘에 걸치면 진로 캠프의 차별점이 흐려진다. */
+  if(MODE==='career'){
     const A2=AI_DEEP;
     H.push(sec(num(),'Go Deeper', A2.title, '',
       `<p>${md(A2.lead)}</p>
