@@ -1201,16 +1201,29 @@ async function gateGo(){
   }
 }
 
+const CAMPNAME = {career:'진로 캠프', study:'자기주도학습 캠프', both:'학업 로드맵 캠프'};
+
 function applyCamp(j){
   if($('mode') && j.mode) $('mode').value = j.mode;
   if($('grade') && j.grade) $('grade').value = j.grade;
   if($('six')) $('six').checked = !!j.six;
+  const nm = CAMPNAME[j.mode] || '';
+  const gr = {'초':'초등 고학년','중':'중학생','고':'고등학생'}[j.grade] || '';
+  const line = j.label ? `<b>${j.label}</b> · ${nm}${j.six?' (6차시)':''} · ${gr}` : '';
+
+  /* 입력 화면 위 — 코드가 제대로 먹혔는지 보여준다.
+     조용히 넘어가면 학생도 강사도 확인할 방법이 없다. */
+  const bar = $('codeBar'), txt = $('codeBarTxt');
+  if(bar && txt && line){ txt.innerHTML = '입장했습니다 — ' + line; bar.style.display='flex'; }
+
   const box = $('campBadge');
-  if(box && j.label){
-    const nm = {career:'진로 캠프', study:'자기주도학습 캠프', both:'학업 로드맵 캠프'}[j.mode]||'';
-    box.innerHTML = `<b>${j.label}</b> · ${nm}${j.six?' (6차시)':''}`;
-    box.style.display='block';
-  }
+  if(box && line){ box.innerHTML = line; box.style.display='block'; }
+}
+
+/* 코드를 다시 넣고 싶을 때 — 강사 모드 표시도 함께 지운다 */
+function gateReset(){
+  try{ sessionStorage.removeItem('hbts_gate') }catch(e){}
+  location.href = location.pathname;
 }
 
 /* 사용 실적 — 학교 제안 때 쓰는 숫자.
@@ -1238,7 +1251,12 @@ async function bumpStat(mode){
   let g=null;
   try{ g = sessionStorage.getItem('hbts_gate') }catch(e){}
   if(g){
-    if(g==='teacher'){ setAdmin(true); enterTool(); }
+    if(g==='teacher'){
+      setAdmin(true); enterTool();
+      const bar=$('codeBar'), txt=$('codeBarTxt');
+      if(bar&&txt){ txt.innerHTML='<b>강사용</b> — 코드 없이 들어왔습니다. 캠프 종류를 직접 골라주세요.';
+                    bar.style.display='flex'; }
+    }
     else { try{ applyCamp(JSON.parse(g)) }catch(e){} enterTool(); }
   }
   const q = new URLSearchParams(location.search);

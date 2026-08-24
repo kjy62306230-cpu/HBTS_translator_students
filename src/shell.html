@@ -430,6 +430,13 @@ section.alt .promptbox{background:rgba(255,255,255,.72)}
   padding:7px 0 0}
 .campbadge b{color:var(--forest)}
 
+.codebar{display:flex;justify-content:space-between;align-items:center;gap:14px;
+  margin-top:18px;padding:11px 16px;border:1px solid #B4CBB9;border-radius:3px;
+  background:rgba(46,125,91,.07);font-size:13.5px}
+.codebar b{color:var(--forest)}
+.codebar a{font-size:12.5px;color:var(--moss);text-decoration:none;white-space:nowrap}
+.codebar a:hover{text-decoration:underline}
+
 /* ── 입장 코드 화면 ── */
 .gatewrap{padding-top:52px;padding-bottom:70px;max-width:560px}
 .gatein{display:flex;gap:10px;align-items:stretch}
@@ -533,6 +540,10 @@ section.alt .promptbox{background:rgba(255,255,255,.72)}
 </section>
 
 <section id="input" style="display:none">
+<div class="wrap noprint"><div class="codebar" id="codeBar" style="display:none">
+  <span id="codeBarTxt"></span>
+  <a href="#" onclick="gateReset();return false">다른 코드로 들어가기</a>
+</div></div>
 <div class="cover"><div class="wrap">
   <div class="eyebrow">Human Brain Thinking Styles</div>
   <h1>검사지 한 장이<br><span class="thin">삼 년치 설계도가 됩니다</span></h1>
