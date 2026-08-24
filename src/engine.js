@@ -48,9 +48,9 @@ function buildProfile(){
   ORDER.forEach(c=>{ const v=parseInt($('c_'+c).value,10); if(isNaN(v)) hasChild=false; child[c]=v; });
 
   const n = id => parseInt($(id).value,10)||0;
-  const sorted=[...ORDER].sort((a,b)=>s[b]-s[a]);
+  const sorted=[...ORDER].sort((a,b)=>s[b]-s[a]);   /* 1→4순위 */
   const comp = ORDER.filter(c=>s[c]>=80);
-  const top1=sorted[0], top2=sorted[1], low=sorted[3];
+  const top1=sorted[0], top2=sorted[1], low2=sorted[2], low=sorted[3];   /* low2 = 3순위 */
   const gap12=s[top1]-s[top2], spread=s[top1]-s[low];
 
   const kind = comp.length===0?'기준선 미도달'
@@ -76,7 +76,7 @@ function buildProfile(){
     mode: ($('mode')&&$('mode').value)||'both',
     six: !!($('six')&&$('six').checked),
     scores:s, child:hasChild?child:null, shift,
-    sorted, comp, kind, top1, top2, low, gap12, spread,
+    sorted, comp, kind, top1, top2, low2, low, gap12, spread,
     diagOfTop, diagIsLowest, pairKey, usePair, ex, inv, eiKey,
     pos:n('pos'), neg:n('neg'), wpos:n('wpos'), wneg:n('wneg'),
     word:$('word').value.trim() };
@@ -323,31 +323,108 @@ function renderReport(p){
 
   if(on('01')) H.push(`<a id="gs1"></a>`+sec(num(),'Profile','두뇌 프로파일','',pf));
 
-  /* ---------- 02 나는 이런 사람 ---------- */
-  let who = `<h3 class="blk">${A.ko}(${p.top1}) ${s[p.top1]}점 — ${A.nick}</h3>
-    <ul class="pl">${A.traits.map(t=>`<li>${md(t)}</li>`).join('')}</ul>`;
+  /* ---------- 02 나는 이런 사람 ----------
+     2026-08-24 J님 지시: 「낮은 점수 2개도 다 넣어줘. 취약한 점 장단점 등등 다 넣어줘야지」
+     그리고 「79점은 평균에서 가장 높은 부분이야」 → 구간별로 톤이 달라야 한다.
+     그래서 네 영역을 **순위대로 전부** 카드로 다룬다.
+       1·2순위  강점 + 과할 때(OVERUSE)
+       3·4순위  구간별 톤(lowTone) + 신호 + 보완법(WEAK_SUPPORT.fixes) + 덜 겪는 것(LOW_UPSIDE) */
+  let IN = 0;
+  const icard = (title, sub, body, only, tone) => {
+    IN++;
+    return `<div class="lc${tone?' t-'+tone:''}"><div class="lch"><div class="n">${String(IN).padStart(2,'0')}</div><div>
+        <h3>${title}</h3>${sub?`<span class="sub">${md(sub)}</span>`:''}</div></div>
+      <div class="lcb">${body}${only?`<div class="only"><i>이것만</i><span>${md(only)}</span></div>`:''}</div></div>`;
+  };
+
+  /* 상위 영역 — 강점과 그 그림자를 한 카드에 */
+  const strongCard = (code, rank) => {
+    const K = KB[code], v = s[code], b = band(v), ov = OVERUSE[code];
+    const many = rank===1;
+    return icard(`${rank}순위 · ${K.ko} ${v}점 — ${K.nick}`,
+      `${b.label}. ${K.short}`,
+      `<h4 class="mini">이런 사람입니다</h4>
+       <ul class="pl">${K.traits.slice(0, many?8:5).map(t=>`<li>${md(t)}</li>`).join('')}</ul>
+       ${many?`<h4 class="mini">힘을 내는 자리</h4>
+       <ul class="pl">${K.core.map(t=>`<li>${md(t)}</li>`).join('')}</ul>`:''}
+       <div class="warnbox"><b>${ov.head}</b> — 강점은 과해지면 약점이 됩니다.
+         <ul class="pl" style="margin-top:9px">${ov.items.map(t=>`<li>${md(t)}</li>`).join('')}</ul>
+         <p style="margin:11px 0 0"><b>그래서</b> — ${md(ov.fix)}</p></div>`,
+      many ? md(K.oneLine).replace(/<[^>]+>/g,'') : `${K.nick} 쪽 성격도 함께 강하게 나타납니다.`);
+  };
+
+  let who = strongCard(p.top1, 1);
 
   if(p.usePair){
-    who += `<h3 class="blk">${B.ko}(${p.top2}) ${s[p.top2]}점도 함께 높습니다 — ${B.nick}</h3>
-      <ul class="pl">${B.traits.slice(0,5).map(t=>`<li>${md(t)}</li>`).join('')}</ul>`;
+    who += strongCard(p.top2, 2);
     const cb=COMBO[p.pairKey];
-    if(cb) who += `<div class="callout"><h5>두 영역이 겹치는 자리 — ${cb.name}</h5>
-      <p>${md(cb.desc)}</p>${cb.note?`<p class="src" style="margin-top:10px">${md(cb.note)}</p>`:''}</div>`;
+    if(cb) who += icard(`두 영역이 겹치는 자리 — ${cb.name}`,
+      '두 강점이 함께 작동할 때 나오는 모습입니다. **여기가 이 학생의 자리**입니다.',
+      `<div class="rank">
+         <div><i>1순위</i><b>${A.nick}</b><u>${s[p.top1]}</u></div>
+         <div><i>2순위</i><b>${B.nick}</b><u>${s[p.top2]}</u></div>
+       </div>
+       <p>${md(cb.desc)}</p>${cb.note?`<p class="src" style="margin-top:10px">${md(cb.note)}</p>`:''}`,
+      `${cb.name} — 이 조합을 가진 사람이 흔하지 않습니다.`);
   } else {
-    who += `<div class="pull">${A.ko} ${s[p.top1]}점과 2순위 ${B.ko} ${s[p.top2]}점의 차이가 <b>${p.gap12}점</b>으로 뚜렷합니다.
-      ${A.ko} 쪽 특징이 특히 강하게 나타나는 편이라, 이 영역을 중심으로 설계하는 편이 낫습니다.</div>`;
+    who += icard(`2순위 · ${B.ko} ${s[p.top2]}점 — ${B.nick}`,
+      `1순위와 **${p.gap12}점 차이**로 벌어져 있습니다. 1순위 쪽이 뚜렷합니다.`,
+      `<ul class="pl">${B.traits.slice(0,5).map(t=>`<li>${md(t)}</li>`).join('')}</ul>
+       <div class="pull">${A.ko} ${s[p.top1]}점과 차이가 <b>${p.gap12}점</b>으로 뚜렷합니다.
+         ${A.nick} 특징이 특히 강하게 나타나는 편이라, <b>이 영역을 중심으로</b> 설계하는 편이 낫습니다.</div>`,
+      `**1순위 ${A.nick}에 집중**하세요. 두 개를 반씩 쓰면 둘 다 흐려집니다.`);
   }
 
+  /* 하위 영역 — 3순위·4순위 둘 다. 점수 구간이 말투를 정한다. */
+  const lowCard = (code, rank) => {
+    const K = KB[code], v = s[code], t = lowTone(v), ws = WEAK_SUPPORT[code], up = LOW_UPSIDE[code];
+    const soft = (t.key==='ok' || t.key==='near');   /* 취약이 아니다 */
+
+    let body = `<p>${md(t.line)}</p>`;
+
+    if(!soft && ws){
+      body += `<h4 class="mini">이런 일이 생길 수 있습니다</h4>
+        <ul class="pl">${ws.signs.map(x=>`<li>${md(x)}</li>`).join('')}</ul>`;
+    }
+
+    /* ★ 보완법 — J님 지시 「그래서 보완하는 법 이런것도 해야지」 */
+    if(ws && ws.fixes){
+      body += `<h4 class="mini">${soft?'더 올리고 싶다면':'그래서 이렇게 막습니다'}</h4>
+        <ol class="step">${ws.fixes.map(x=>`<li>${md(x)}</li>`).join('')}</ol>
+        <div class="${soft?'callout':'pull'}" style="margin-top:14px">
+          ${soft?'<h5>이 구간의 원칙</h5>':''}
+          <p style="margin-bottom:0">${md(t.act)}</p></div>`;
+    }
+
+    /* 낮은 쪽의 이점 — 「낮아서 좋다」가 아니라 「이쪽으로는 손해를 덜 본다」 */
+    if(up && !soft){
+      body += `<div class="callout"><h5>${up.head}</h5>
+        <ul class="pl">${up.items.map(x=>`<li>${md(x)}</li>`).join('')}</ul>
+        <p class="src" style="margin-top:10px">낮은 게 좋다는 뜻이 아닙니다.
+          <b>이 방향으로는 손해를 덜 본다</b>는 뜻입니다.</p></div>`;
+    }
+
+    const only = soft
+      ? `취약한 영역이 아닙니다. **순위가 낮을 뿐 평균으로 보면 높은 편**입니다.`
+      : t.key==='mid'
+        ? `늘 문제가 되진 않습니다. **이 영역이 몰리는 과제**에서만 조심하세요.`
+        : `**노력이 아니라 도구로** 막으세요. 의지로 버티면 오래 못 갑니다.`;
+
+    return icard(`${rank}순위 · ${K.ko} ${v}점 — ${t.label}`,
+      `${K.short}. ${soft?'참고용으로 읽으세요.':'여기서 새는 힘을 막아두면 강점이 더 잘 굴러갑니다.'}`,
+      body, only, soft?'soft':'low');
+  };
+
+  who += lowCard(p.low2, 3);
+  who += lowCard(p.low, 4);
+
   if(p.diagIsLowest && s[p.top1]>=80 && p.spread>=30){
-    who += `<div class="warnbox"><b>가장 강한 영역의 대각선이 가장 낮습니다</b><br>
+    who += `<div class="warnbox" style="margin-top:20px"><b>가장 강한 영역의 대각선이 가장 낮습니다</b><br>
       결과지는 대각선에 있는 두 영역이 <b>서로 반대 성격</b>이라고 설명합니다.
       ${A.ko}가 가장 높고 그 대각선인 ${L.ko}가 가장 낮은 지금 형태는
       <b>강점이 뚜렷한 대신 그 반대편이 확실히 비어 있는</b> 모양입니다.
       강점 쪽으로 밀되, 비어 있는 쪽은 <b>노력이 아니라 도구로</b> 메우는 편이 효율적입니다.</div>`;
   }
-
-  who += `<h4 class="mini">이 유형이 힘을 내는 자리</h4>
-    <ul class="pl">${A.core.map(t=>`<li>${md(t)}</li>`).join('')}</ul>`;
 
   if(MODE==='study'){
     who += `<h3 class="blk">참고 — 이 유형이 강한 분야</h3>
@@ -863,7 +940,7 @@ function livePreview(){
   ORDER.forEach(c=>{ const v=parseInt($('s_'+c).value,10); if(isNaN(v)) ok=false; s[c]=v||0; });
   const box=$('preview');
   if(!ok){ box.innerHTML='<p class="hint" style="text-align:center;padding:34px 0">네 영역 점수를 입력하면 여기에 그래프가 나타납니다</p>'; return; }
-  const sorted=[...ORDER].sort((a,b)=>s[b]-s[a]);
+  const sorted=[...ORDER].sort((a,b)=>s[b]-s[a]);   /* 1→4순위 */
   box.innerHTML = chart(s,null,false) +
     `<p class="hint" style="text-align:center;margin-top:12px">최고 <b>${KB[sorted[0]].ko} ${s[sorted[0]]}</b> ·
      최저 <b>${KB[sorted[3]].ko} ${s[sorted[3]]}</b> · 기준선 통과 <b>${ORDER.filter(c=>s[c]>=80).length}개</b></p>`;

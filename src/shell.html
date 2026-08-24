@@ -287,6 +287,11 @@ table.t td.v{font-variant-numeric:tabular-nums;font-weight:800;white-space:nowra
 .dark .only{background:rgba(184,135,59,.2);border-top-color:rgba(184,135,59,.5)}
 .dark .only span{color:#fff}
 
+/* 순위별 카드 톤 — 강점 / 참고 / 취약이 한눈에 구분돼야 한다 */
+.lc.t-soft .lch{background:#4A6B5C}          /* 3순위인데 취약 아님 */
+.lc.t-low  .lch{background:#6E4A2E}          /* 실제 취약 */
+.lc.t-low .lch .n,.lc.t-soft .lch .n{color:rgba(255,255,255,.45)}
+
 /* 두 우성 배지 */
 .rank{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px}
 .rank div{border:1.5px solid var(--rule);border-radius:2px;padding:9px 15px;background:var(--paper);
