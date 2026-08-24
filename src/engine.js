@@ -212,6 +212,11 @@ function generate(){
   $('result').style.display='block';
   window.scrollTo(0,0);
   bumpStat(p.mode);          /* 사용 실적 — 개인정보 없이 건수만 */
+
+  /* 진로 캠프는 심화 설계서가 그날의 산출물이다 (2026-08-24 J님 확정).
+     버튼을 눌러야만 나오면 30명 중 몇 명은 빈손으로 나간다. 그래서 자동으로 돌린다.
+     study·both 는 학습 파트가 본체이므로 기존대로 버튼을 눌러야 나온다. */
+  if(p.mode==='career') setTimeout(startDeep, 300);
 }
 function backToInput(){ $('result').style.display='none'; $('input').style.display='block'; window.scrollTo(0,0); }
 
@@ -278,15 +283,20 @@ function renderReport(p){
   /* ── 진행 안내 — 4차시에 학생이 화면에서 길을 잃지 않게 ──
      이 설계서는 수업을 다 듣고 난 뒤에 여는 도구다.
      22장을 처음부터 읽는 게 아니라 「지금 할 것」만 짚어준다. */
+  /* 캠프마다 오늘의 목적지가 다르다. 진로 캠프에서 「내 학습법을 본다」가 뜨면 안 된다. */
+  const GS2 = MODE==='career'
+    ? { href:'#gs2', b:'내 진로를 좁힌다', s:'후보 넓히기 → 3개로 → 확인하기' }
+    : { href:'#gs2', b:'내 학습법을 본다', s:'1·2순위 조합에 맞춘 실행 방법' };
   H.push(`<section class="sec guide noprint"><div class="wrap">
     <div class="gh">오늘 이 순서로 보세요</div>
     <p class="gl">이 설계서는 <b>수업에서 들은 내용을 내 점수로 다시 보는</b> 자료입니다.
-       처음부터 다 읽지 마세요. 아래 세 단계면 충분합니다.</p>
+       처음부터 다 읽지 마세요. <b>초록 카드만 따라가면</b> 됩니다.</p>
     <div class="gsteps">
       <a href="#gs1"><i>①</i><b>나를 확인한다</b><span>내 점수가 무엇을 말하는지</span></a>
-      <a href="#gs2"><i>②</i><b>내 학습법을 본다</b><span>1·2순위 조합에 맞춘 실행 방법</span></a>
+      <a href="${GS2.href}"><i>②</i><b>${GS2.b}</b><span>${GS2.s}</span></a>
     </div>
-    <p class="gn">읽고 나면 <b>활동지에 내 것으로 옮겨 적습니다.</b> 오늘의 결과물은 활동지에서 나옵니다.</p>
+    <p class="gn">각 카드 아래 <b>「이것만」</b> 줄이 그 카드의 요약입니다. 시간이 없으면 그 줄만 읽으세요.
+       읽고 나면 <b>활동지에 내 것으로 옮겨 적습니다.</b></p>
   </div></section>`);
 
   if(on('01')) H.push(`<a id="gs1"></a>`+sec(num(),'Profile','두뇌 프로파일','',pf));
@@ -339,9 +349,10 @@ function renderReport(p){
           <p class="src">${c.evidence.src}</p></div>
         <h4 class="mini">이렇게 합니다</h4>
         <ol class="step">${c.how.map(h=>`<li>${md(h)}</li>`).join('')}</ol>
-        <p class="src" style="margin-top:14px">${md(c.tip)}</p>
         ${c.warn?`<div class="warnbox">${md(c.warn)}</div>`:''}
         ${c.worry?`<p style="margin-top:14px;font-size:14.5px;opacity:.85">${md(c.worry)}</p>`:''}
+        <div class="only" style="margin:18px -24px -22px -84px;padding-left:84px">
+          <i>이것만</i><span>${md(c.tip)}</span></div>
       </div></div>`;
     return t;
   }).join('');
@@ -350,66 +361,104 @@ function renderReport(p){
     '이 네 가지는 수백 편의 연구로 검증된 것이고, **유형과 상관없이 모든 학생에게 똑같이 효과가 있습니다.** 여기부터가 실제로 성적을 움직이는 부분입니다.',
     methodCards() + core, 'dark'));
 
-  /* ---------- 04 나의 진입로 ---------- */
+  /* ---------- 04 나의 진입로 ----------
+     ⚠️ 읽기 구조 원칙 (2026-08-24 J님 지시)
+     학생은 글 덩어리를 안 읽는다. 모든 학습 내용은 반드시 lcard() 프레임 안에 넣는다.
+     카드 헤더 = 번호 + 제목 + 한 줄 요약. 스캔만 해도 뭔지 알아야 한다.
+     카드 끝 = 「이것만」 바. 한 줄만 가져가도 손해가 없게 한다.
+     career 모드에서는 이 섹션이 맨 뒤로 밀리고 분량이 반으로 준다. */
   const en = ENTRY[p.top1];
+  const fl = FLOW[p.top1];
+  const ei = EI[p.eiKey];
+  const csk = comboStudyKey(p);
+  let LN = 0;
+  const card = (title, sub, body, only) => {
+    LN++;
+    return `<div class="lc"><div class="lch"><div class="n">${String(LN).padStart(2,'0')}</div><div>
+        <h3>${title}</h3>${sub?`<span class="sub">${md(sub)}</span>`:''}</div></div>
+      <div class="lcb">${body}${only?`<div class="only"><i>이것만</i><span>${md(only)}</span></div>`:''}</div></div>`;
+  };
+  const rankBadge = () =>
+    `<div class="rank">
+       <div><i>1순위</i><b>${KB[p.top1].nick}</b><u>${s[p.top1]}</u></div>
+       <div><i>2순위</i><b>${KB[p.top2].nick}</b><u>${s[p.top2]}</u></div>
+     </div>`;
+
   let entry = '';
+
+  /* ── 카드 1 · 네 가지 기본 (career 는 강사 PPT 대신 여기서 한 번에) ── */
   if(BRIEF){
-    /* 진로 캠프 — 4기법을 따로 배우지 않으므로 여기서 한 번에 짧게 준다 */
-    entry += `<p>공부법은 <b>유형과 상관없이 효과가 확인된 네 가지</b>가 기본입니다.
-      먼저 이 넷을 알고, 그다음 <b>내 형식</b>으로 바꾸면 됩니다.</p>
-      <table class="t"><tbody>${CORE.map(c=>
-        `<tr><td class="k">${c.n} ${c.name}</td><td>${md(c.oneLine)}</td></tr>`).join('')}</tbody></table>
-      <h3 class="blk">${en.label.replace('의 진입로','은 이렇게 시작하면 됩니다')}</h3>
-      <div class="entry">${en.map.map(([k,v])=>
-        `<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>`;
-  } else {
-    entry += `<p>${md(en.intro)}</p>
-      <div class="entry">${en.map.map(([k,v])=>`<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>`;
+    entry += card('모두에게 통하는 네 가지',
+      '유형과 상관없이 효과가 확인된 기본입니다. 이 넷을 알고, 그다음 내 형식으로 바꾸면 됩니다.',
+      `<table class="t"><tbody>${CORE.map(c=>
+        `<tr><td class="k">${c.n} ${c.name}</td><td>${md(c.oneLine)}</td></tr>`).join('')}</tbody></table>`,
+      '네 가지는 누구에게나 같습니다. **달라지는 건 방법이 아니라 형식뿐입니다.**');
   }
 
-  /* ★ 내 공부 흐름 — 4기법을 이 학생의 형식으로 짠 것 */
-  const fl = FLOW[p.top1];
-  entry += `<h3 class="blk">${fl.day.title}</h3>
-    <p>강사 설명에서 들은 <b>네 가지 기법</b>이 이 흐름 안에 전부 들어 있습니다.
-       달라지는 것은 <b>순서와 형식</b>뿐입니다.</p>
-    <table class="t"><tbody>${fl.day.rows.map(r=>
-      `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
-    <h3 class="blk">${fl.week.title}</h3>
-    <table class="t"><tbody>${fl.week.rows.map(r=>
-      `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
-    <div class="pull" style="margin-top:18px">${md(fl.key)}</div>`;
+  /* ── 카드 2 · 내 진입로 ── */
+  entry += card(`${KB[p.top1].nick} — 나는 이렇게 시작합니다`,
+    '첫날에 포기하지 않을 모습으로 바꾼 것입니다. 내용이 아니라 **입구**를 바꿉니다.',
+    `<div class="entry">${en.map.map(([k,v])=>
+      `<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>`,
+    '똑같은 방법도 **내 형식으로 들어가야** 손이 움직입니다.');
 
-  /* ── 1·2순위 조합 — 결과지 학습 파트의 핵심 ──
+  /* ── 카드 3 · 하루 흐름 (study·both 만) ── */
+  if(!BRIEF){
+    entry += card(fl.day.title,
+      '네 가지 기법이 이 흐름 안에 전부 들어 있습니다. 달라지는 것은 순서와 형식뿐입니다.',
+      `<table class="t"><tbody>${fl.day.rows.map(r=>
+         `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+       <h3 class="blk">${fl.week.title}</h3>
+       <table class="t"><tbody>${fl.week.rows.map(r=>
+         `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>`,
+      fl.key.replace(/^이 학생에게 가장 중요한 한 줄 — /,''));
+  }
+
+  /* ── 카드 4 · 1·2순위 조합 — 학습 파트의 핵심 ──
      유형별 4종 표는 강사 PPT 와 활동지가 맡는다.
      이 종이에는 「이 학생의 두 우성이 함께 작동하는 방식」만 담는다. */
-  const csk = comboStudyKey(p);
   if(csk){
     const cs = COMBO_STUDY[csk];
-    entry += `<h3 class="blk">내 우성 두뇌 두 개 — ${cs.name}</h3>
-      <p>1순위 <b>${KB[p.top1].nick}(${s[p.top1]})</b> · 2순위 <b>${KB[p.top2].nick}(${s[p.top2]})</b>.
-         ${md(cs.line)}</p>
-      <ol class="step">${cs.how.map(t=>`<li>${md(t)}</li>`).join('')}</ol>
-      <div class="warnbox" style="margin-top:16px">${md(cs.warn)}</div>`;
+    entry += card(`내 우성 두뇌 두 개 — ${cs.name}`,
+      '이 결과지에서 **가장 중요한 카드**입니다. 두 강점이 함께 굴러가는 방식입니다.',
+      `${rankBadge()}<p>${md(cs.line)}</p>
+       <ol class="step">${cs.how.map(t=>`<li>${md(t)}</li>`).join('')}</ol>
+       <div class="warnbox">${md(cs.warn)}</div>`,
+      cs.line.replace(/\*\*/g,'').replace(/입니다\.$/,'') + ' — 이 조합으로 갑니다.');
   }
 
-  const ei=EI[p.eiKey];
-  entry += `<h3 class="blk">외향성 ${p.ex} : 내향성 ${p.inv} — ${ei.title}</h3>
-    <p>${md(ei.body)}</p><div class="pull">${md(ei.todo)}</div>`;
+  /* ── 카드 5 · 혼자 / 함께 ── */
+  entry += card(`혼자 vs 함께 — ${ei.title}`,
+    `외향성 ${p.ex} : 내향성 ${p.inv}. 어디서 공부하느냐가 방법만큼 중요합니다.`,
+    `<p>${md(ei.body)}</p><div class="pull">${md(ei.todo)}</div>`,
+    ei.todo.replace(/\*\*/g,''));
 
+  /* ── 카드 6·7 · study·both 전용 ── */
   if(!BRIEF){
-  entry += `<h3 class="blk">${AB_TEST.title}</h3><p>${md(AB_TEST.lead)}</p>
-    <ol class="step">${AB_TEST.steps.map(x=>`<li><b>${x.n}</b> — ${md(x.d)}</li>`).join('')}</ol>
-    <div class="callout"><h5>왜 느낌이 아니라 숫자인가</h5><p style="margin-bottom:0">${md(AB_TEST.note)}</p></div>`;
+    entry += card(AB_TEST.title,
+      '위 진입로는 제안이지 정답이 아닙니다. 진짜 답은 2주만 재보면 나옵니다.',
+      `<ol class="step">${AB_TEST.steps.map(x=>`<li><b>${x.n}</b> — ${md(x.d)}</li>`).join('')}</ol>
+       <div class="callout"><h5>왜 느낌이 아니라 숫자인가</h5>
+         <p style="margin-bottom:0">${md(AB_TEST.note)}</p></div>`,
+      '**느낌이 아니라 점수로** 정하세요. 공부 직후의 느낌은 자주 거짓말을 합니다.');
 
-  entry += `<h3 class="blk">${DAILY.title}</h3>
-    <table class="t"><tbody>${DAILY.rows.map(r=>`<tr><td class="k">${r[0]}</td><td class="v">${r[1]}</td></tr>`).join('')}</tbody></table>
-    <p>${md(DAILY.note)}</p><p class="src">${DAILY.src}</p>`;
+    entry += card(DAILY.title,
+      '더 오래 앉아 있는 게 답이 아닙니다. 근거가 있는 상한선이 있습니다.',
+      `<table class="t"><tbody>${DAILY.rows.map(r=>
+         `<tr><td class="k">${r[0]}</td><td class="v">${r[1]}</td></tr>`).join('')}</tbody></table>
+       <p>${md(DAILY.note)}</p><p class="src">${DAILY.src}</p>`,
+      '**3시간 넘게 앉아 있는 계획표는 근거가 없습니다.**');
   }
 
-  if(on('04')) H.push(`<a id="gs2"></a>`+sec(num(),'Study',
+  /* career 는 이 섹션을 08 뒤로 민다 — 진로가 메인이므로 학습법이 앞에 오면 안 된다.
+     num() 은 호출 시점에 번호를 매기므로 push 순서만 바꾸면 번호는 자동으로 맞는다. */
+  const studySec = () => `<a id="gsStudy"></a>` + sec(num(),'Study',
     BRIEF ? '나에게 맞는 공부법' : `${en.label}`,
-    '위 네 가지를 **어떤 모습으로 시작하면 이 학생이 첫 주에 포기하지 않을지**에 대한 제안입니다.',
-    entry));
+    BRIEF ? '진로 캠프에서는 **간략판**입니다. 자세한 학습 설계는 자기주도학습 캠프에서 다룹니다.'
+          : '위 네 가지를 **어떤 모습으로 시작하면 이 학생이 첫 주에 포기하지 않을지**에 대한 제안입니다.',
+    entry);
+
+  if(on('04') && !BRIEF) H.push(`<a id="gs2"></a>`+studySec());
 
   /* ---------- 05 시험 계획 ---------- */
   let exam = `<p>${md(EXAM_PLAN.lead)}</p>
@@ -452,35 +501,116 @@ function renderReport(p){
   if(on('05')) H.push(sec(num(),'Exam Plan','시험 2주 계획표','', exam, 'alt'));
 
   /* ---------- 06 진로 ---------- */
+  /* ⚠️ 진로 섹션도 전부 카드 프레임. 표만 늘어놓으면 학생이 안 읽는다. */
+  let CN = 0;
+  const ccard = (title, sub, body, only) => {
+    CN++;
+    return `<div class="lc"><div class="lch"><div class="n">${String(CN).padStart(2,'0')}</div><div>
+        <h3>${title}</h3>${sub?`<span class="sub">${md(sub)}</span>`:''}</div></div>
+      <div class="lcb">${body}${only?`<div class="only"><i>이것만</i><span>${md(only)}</span></div>`:''}</div></div>`;
+  };
+
   let car = `<p>아래는 <b>정답 목록이 아니라 탐색을 시작할 지도</b>입니다. 여기 없는 직업이 답일 수도 있습니다.
-    중요한 건 직업 이름이 아니라 <b>「내가 어떤 방식으로 일할 때 힘이 나는가」</b>입니다.</p>
-    <h4 class="mini">${A.ko}(${p.top1}) 기준 — 대표 분야</h4>
-    <div class="tags">${A.fields.map(f=>`<span>${f}</span>`).join('')}</div>`;
+    중요한 건 직업 이름이 아니라 <b>「내가 어떤 방식으로 일할 때 힘이 나는가」</b>입니다.</p>`;
 
-  if(p.usePair){
-    car += `<h4 class="mini">${B.ko}(${p.top2}) 기준 — 대표 분야</h4>
-      <div class="tags">${B.fields.map(f=>`<span>${f}</span>`).join('')}</div>`;
-    const cb=COMBO[p.pairKey];
-    if(cb) car += `<div class="callout"><h5>두 개가 겹치는 자리 — ${cb.name}</h5>
-      <p>${md(cb.desc)}</p><div class="tags yes" style="margin-top:12px">${cb.where.map(w=>`<span>${w}</span>`).join('')}</div></div>`;
+  /* ── 카드 · 어떤 분야에서 ── */
+  {
+    let fields = `<h4 class="mini">${A.ko}(${p.top1}) ${s[p.top1]}점 기준</h4>
+      <div class="tags">${A.fields.map(f=>`<span>${f}</span>`).join('')}</div>`;
+    if(p.usePair){
+      fields += `<h4 class="mini">${B.ko}(${p.top2}) ${s[p.top2]}점 기준</h4>
+        <div class="tags">${B.fields.map(f=>`<span>${f}</span>`).join('')}</div>`;
+      const cb=COMBO[p.pairKey];
+      if(cb) fields += `<div class="callout"><h5>두 개가 겹치는 자리 — ${cb.name}</h5>
+        <p>${md(cb.desc)}</p>
+        <div class="tags yes" style="margin-top:12px">${cb.where.map(w=>`<span>${w}</span>`).join('')}</div></div>`;
+    }
+    car += ccard('어떤 분야에서 힘이 나는가',
+      '내 점수가 가리키는 **탐색 시작점**입니다. 정답 목록이 아닙니다.',
+      fields,
+      p.usePair && COMBO[p.pairKey]
+        ? `두 강점이 **겹치는 자리(${COMBO[p.pairKey].name})**부터 보세요. 거기가 경쟁이 가장 덜합니다.`
+        : '여기 없는 분야가 답일 수도 있습니다. **시작점일 뿐입니다.**');
   }
 
-  const cm = CAREER_MAP[p.top1];
-  car += `<h3 class="blk">${A.ko} 강점이 쓰이는 자리 — 일하는 방식으로 묶으면</h3>
-    <p class="src" style="margin-bottom:14px">직업 이름이 아니라 <b>「어떤 방식으로 일하는가」</b>로 묶었습니다. ${WORK_STYLE[p.top1]}입니다.</p>
-    <table class="t"><tbody>${cm.map(r=>
-      `<tr><td class="k" style="width:190px">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table>`;
-
-  if(p.usePair && CAREER_MAP[p.top2]){
-    car += `<h3 class="blk">${B.ko} 쪽에서 열리는 자리</h3>
-      <table class="t"><tbody>${CAREER_MAP[p.top2].map(r=>
+  /* ── 카드 · 어떤 방식으로 ── */
+  {
+    const cm = CAREER_MAP[p.top1];
+    let ways = `<p style="margin:0 0 14px">직업 이름이 아니라 <b>「어떤 방식으로 일하는가」</b>로 묶었습니다.
+        ${WORK_STYLE[p.top1]}입니다.</p>
+      <table class="t"><tbody>${cm.map(r=>
         `<tr><td class="k" style="width:190px">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table>`;
+    if(p.usePair && CAREER_MAP[p.top2]){
+      ways += `<h3 class="blk">${B.ko} 쪽에서 열리는 자리</h3>
+        <table class="t"><tbody>${CAREER_MAP[p.top2].map(r=>
+          `<tr><td class="k" style="width:190px">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table>`;
+    }
+    ways += `<p class="src">HBTS 결과지의 직업 분류를 참고하되, 학생이 읽기 쉽도록 뿌리깊이가 다시 묶은 것입니다.</p>`;
+    car += ccard('어떤 방식으로 일할 때 힘이 나는가',
+      '직업 이름보다 **이쪽이 훨씬 중요합니다.** 같은 직업도 방식이 다르면 결과가 다릅니다.',
+      ways,
+      '직업 이름을 고르지 말고 **일하는 방식**을 고르세요. 이름은 바뀌어도 방식은 남습니다.');
   }
 
-  car += `<p class="src">HBTS 결과지의 직업 분류를 참고하되, 학생이 읽기 쉽도록 뿌리깊이가 다시 묶은 것입니다.
-    여기 없는 직업도 얼마든지 가능합니다.</p>`;
+  /* ── 진로 보강 (2026-08-24) — 카드 프레임으로 분리한다.
+     ① 못 견디는 환경  ② 좁히기 3단계 + 검증법  ③ 고교 과목 선택
+     진로 캠프가 메인일 때(career·both) 학생이 「그래서 뭘 하지」에 답을 갖고 나가야 한다. */
+  /* ① 못 견디는 환경 — 최저 영역 기반. 진로 선택에서 이게 더 결정적이다. */
+  const cst = CANT_STAND[p.low];
+  if(cst){
+    car += `<h3 class="blk">방향을 고르기 전에 — 피해야 할 것부터</h3>
+      <p>진로에서 <b>「하고 싶은 것」보다 「오래 못 버티는 것」이 더 결정적</b>입니다.
+         좋아하는 일도 못 버티는 환경에 놓이면 3년을 못 갑니다.</p>` +
+      ccard(`${KB[p.low].nick} ${s[p.low]}점 — ${cst.head}`,
+        '네 영역 중 가장 낮은 곳입니다. 여기서 나오는 신호를 미리 알아두세요.',
+        `<p>${md(cst.lead)}</p>
+         <h4 class="mini">이런 자리가 그렇습니다</h4>
+         <ul class="pl">${cst.signs.map(t=>`<li>${md(t)}</li>`).join('')}</ul>
+         <div class="callout"><h5>그래서 이렇게 고릅니다</h5>
+           <p style="margin-bottom:0">${md(cst.how)}</p></div>`,
+        '**못 한다는 뜻이 아닙니다.** 이 일이 **전부**인 자리를 피하라는 뜻입니다.');
+  }
 
-  if(on('06')) H.push(sec(num(),'Career','진로 방향','', car));
+  /* ② 좁히기 3단계 + 검증법 */
+  const NW = NARROW;
+  car += `<h3 class="blk">${NW.head}</h3>` +
+    ccard('넓히고 → 줄이고 → 확인한다',
+      NW.lead,
+      `<ol class="step">${NW.steps.map(x=>
+         `<li><b>${x.n}</b> — ${md(x.d)}<br>
+            <span style="display:inline-block;margin-top:7px;font-size:14px;
+              background:rgba(46,125,91,.1);border:1px solid #B4CBB9;padding:5px 12px;border-radius:2px">
+              이번 달에 할 것 · ${md(x.do)}</span></li>`).join('')}</ol>`,
+      '**3단계를 안 하면 아무것도 정해지지 않습니다.** 머리로 고른 것은 반이 틀립니다.') +
+    ccard(NW.verify.head,
+      NW.verify.lead,
+      `<table class="t"><tbody>${NW.verify.rows.map(r=>
+         `<tr><td class="k" style="width:130px">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+       <div class="warnbox">${md(NW.verify.warn)}</div>`,
+      '**그 일의 가장 지루한 부분을 견딜 수 있는지**가 진짜 기준입니다.');
+
+  /* ③ 고교 과목 선택 — 초등은 너무 이르므로 중·고만 */
+  if(p.grade !== '초'){
+    const SP = SUBJECT_PICK, bt = SP.bytype[p.top1];
+    car += `<h3 class="blk">${SP.head}</h3>` +
+      ccard('고르는 기준 세 가지',
+        SP.lead,
+        `<table class="t"><tbody>${SP.rules.map(r=>
+           `<tr><td class="k" style="width:210px">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+         <div class="pull">${md(SP.note)}</div>`,
+        '진로가 안 정해졌다면 **후보 3개가 공통으로 요구하는 과목**부터 고르세요.') +
+      ccard(`${KB[p.top1].nick} — 과목에서는 이렇게 나타납니다`,
+        '1순위 영역이 과목 선택에서 어떻게 작동하는지입니다.',
+        `<div class="entry">
+           <div class="er"><b>힘이 나는 곳</b><span>${md(bt.fit)}</span></div>
+           <div class="er"><b>우선 고를 것</b><span>${md(bt.pick)}</span></div>
+           <div class="er"><b>조심할 것</b><span>${md(bt.care)}</span></div>
+         </div>
+         <div class="warnbox">${md(SP.warn)}</div>`,
+        bt.pick.replace(/\*\*/g,''));
+  }
+
+  if(on('06')) H.push((MODE==='career'?`<a id="gs2"></a>`:'')+sec(num(),'Career','진로 방향','', car));
 
   /* ---------- 07 로드맵 ---------- */
   const R=ROADMAP_PRINCIPLE, stage=ROADMAP_STAGE[p.grade], ra=ROADMAP_AREA[p.top1];
@@ -531,22 +661,54 @@ function renderReport(p){
 
   if(on('08')) H.push(sec(num(),'State','지금의 마음','', emo));
 
-  /* ---------- AI 로 더 깊이 (진로 캠프 전용) ---------- */
+  /* career 는 여기서 학습법 — 진로가 메인이므로 뒤로 밀었다 (2026-08-24 J님 지시) */
+  if(on('04') && BRIEF) H.push(studySec());
+
+  /* ---------- AI 와 더 대화 (진로 캠프 전용) ----------
+     흐름 (2026-08-24 J님 확정):
+       설계서 생성 → AI 심화 설계 자동 생성 → 「AI에 올릴 PDF」로 저장 → ChatGPT 에 올려 대화
+     ⚠️ 이름이 박힌 PDF 를 올리게 두면 안 된다. 반드시 printAnon() 쪽으로 안내한다. */
   if(MODE==='career'){
     const A2=AI_DEEP;
-    H.push(sec(num(),'Go Deeper', A2.title, '',
-      `<p>${md(A2.lead)}</p>
-       <div class="warnbox">${md(A2.privacy)}</div>
-       <div class="promptbox"><pre id="aiPrompt">${esc(studentPrompt(p))}</pre></div>
-       <div class="btnrow noprint" style="margin-top:12px">
+    let AN = 0;
+    const acard = (title, sub, body, only) => {
+      AN++;
+      return `<div class="lc"><div class="lch"><div class="n">${String(AN).padStart(2,'0')}</div><div>
+          <h3>${title}</h3>${sub?`<span class="sub">${md(sub)}</span>`:''}</div></div>
+        <div class="lcb">${body}${only?`<div class="only"><i>이것만</i><span>${md(only)}</span></div>`:''}</div></div>`;
+    };
+
+    let ai = `<p>${md(A2.lead)}</p><div class="warnbox">${md(A2.privacy)}</div>`;
+
+    ai += acard(A2.how.head,
+      '세 단계면 됩니다. 프롬프트를 길게 쓸 필요 없습니다 — **PDF가 내 정보를 전부 담고 있습니다.**',
+      `<ol class="step">${A2.how.steps.map(x=>
+         `<li><b>${x.n}</b> — ${md(x.d)}</li>`).join('')}</ol>
+       <h4 class="mini">PDF를 올린 뒤 보낼 첫 문장</h4>
+       <div class="promptbox"><pre id="aiPrompt">${esc(A2.how.first)}</pre></div>
+       <div class="btnrow noprint" style="margin:12px 0 0">
          <button class="btn sm" onclick="copyAiPrompt()">${A2.copy}</button>
          <span id="cpMsg" class="hint" style="margin-left:8px"></span>
-       </div>
-       <h3 class="blk">${A2.checkTitle}</h3><p>${md(A2.checkLead)}</p>
-       <table class="t"><tbody>${A2.checks.map(r=>
-         `<tr><td class="k">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
-       <div class="warnbox" style="margin-top:18px">${md(A2.warn)}</div>
-       <p class="src" style="margin-top:16px">대화하며 알게 된 것은 <b>활동지에 적으세요.</b></p>`, 'alt'));
+       </div>`,
+      '저장한 **PDF를 그대로 올리면** 됩니다. 긴 프롬프트를 쓸 필요 없어요.');
+
+    ai += acard(A2.checkTitle,
+      A2.checkLead,
+      `<table class="t"><tbody>${A2.checks.map(r=>
+         `<tr><td class="k" style="width:110px">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>
+       <div class="warnbox">${md(A2.warn)}</div>`,
+      '**⑦번을 꼭 하세요.** 좋은 말만 듣고 끝나면 오늘 한 게 없습니다.');
+
+    ai += acard(A2.blocked.head,
+      A2.blocked.lead,
+      `<table class="t"><tbody>${A2.blocked.rows.map(r=>
+         `<tr><td class="k" style="width:120px">${r[0]}</td><td>${md(r[1])}</td></tr>`).join('')}</tbody></table>`,
+      'AI가 안 돼도 **심화 설계서는 이미 손에 있습니다.** 오늘 것은 이미 챙겼습니다.');
+
+    ai += `<p class="src" style="margin-top:20px">대화하며 알게 된 것은 <b>활동지에 적으세요.</b>
+      오늘의 산출물은 화면이 아니라 <b>손에 남는 종이</b>입니다.</p>`;
+
+    H.push(sec(num(),'Go Deeper', A2.title, '', ai, 'alt'));
   }
 
   /* ---------- 09 이 설계서가 서 있는 자리 ---------- */
@@ -814,7 +976,8 @@ async function startDeep(){
   const slot=$('aiSlot');
   slot.innerHTML=`<section class="sec"><div class="wrap">
     <div class="sechead"><div class="idx">★</div><div><div class="kicker">AI Analysis</div>
-    <h2>AI 심화 설계</h2><p>${P.name} 학생의 결과를 읽고 설계서를 쓰는 중입니다… <span class="spin"></span></p></div></div>
+    <h2>AI 심화 설계</h2><p>${P.name} 학생의 결과를 읽고 <b>이 학생만을 위한 설계서</b>를 쓰는 중입니다.
+      20~30초 걸립니다. <b>이 페이지를 닫지 마세요.</b> <span class="spin"></span></p></div></div>
   </div></section>`;
   slot.scrollIntoView({behavior:'smooth',block:'center'});
 
@@ -827,17 +990,38 @@ async function startDeep(){
       <div class="sechead"><div class="idx">★</div><div><div class="kicker">AI Analysis</div>
       <h2>${P.name} 학생 전용 설계</h2></div></div>
       ${mdBlock(text)}
-      <p class="src" style="margin-top:26px">검사 결과를 바탕으로 생성된 해석입니다. 다르다고 느끼는 문장은 「직접 고치기」로 수정하세요.</p>
+      <p class="src" style="margin-top:26px">검사 결과를 바탕으로 생성된 해석입니다.
+        <b>다르다고 느끼는 문장이 있으면 그것도 발견입니다</b> — 활동지에 「나는 이 부분이 다르다」로 적으세요.</p>
       <div class="btnrow noprint"><button class="btn ghost" style="color:#F4F1EA;border-color:rgba(244,241,234,.5)" onclick="startDeep()">다시 생성</button></div>
     </div></section>`;
   }catch(e){
     slot.innerHTML=`<section class="sec alt"><div class="wrap">
       <div class="sechead"><div class="idx">!</div><div><div class="kicker">Error</div>
-      <h2>AI 심화 설계 실패</h2><p>${String(e.message||e)}</p></div></div>
-      <p class="src">잠시 뒤 다시 시도해 주세요.
-      기본 설계서는 위에 그대로 있으니 그것만으로도 사용 가능합니다.</p>
+      <h2>AI 심화 설계를 못 만들었습니다</h2><p>${String(e.message||e)}</p></div></div>
+      <p><b>위의 설계서는 그대로 살아 있습니다.</b> 심화 설계는 거기에 덧붙이는 것이라, 없어도 오늘 수업은 진행됩니다.</p>
+      <p class="src">아래 「다시 시도」를 한 번 눌러보시고, 그래도 안 되면 <b>강사님께 알려주세요.</b>
+        여러 명이 동시에 누르면 순서를 기다려야 할 수 있습니다.</p>
       <div class="btnrow noprint"><button class="btn ghost" onclick="startDeep()">다시 시도</button></div>
     </div></section>`;
+  }
+}
+
+/* ── AI 에 올릴 PDF — 이름을 지운다 ──────────────────────────────
+   학생 30명이 자기 이름이 박힌 PDF 를 ChatGPT 에 올리면 학교가 문제 삼는다.
+   점수·해석은 그대로 두고 이름만 「학생」으로 바꿔서 인쇄한다.
+   인쇄가 끝나면 원래 DOM 으로 되돌린다. */
+function printAnon(){
+  const rep = $('report'), slot = $('aiSlot');
+  const keepR = rep.innerHTML, keepS = slot ? slot.innerHTML : '';
+  const nm = (P && P.name) ? String(P.name).trim() : '';
+  const swap = h => (!nm || nm==='학생') ? h
+    : h.split(nm).join('학생');
+  try{
+    rep.innerHTML = swap(keepR);
+    if(slot) slot.innerHTML = swap(keepS);
+    window.print();
+  } finally {
+    setTimeout(()=>{ rep.innerHTML = keepR; if(slot) slot.innerHTML = keepS; }, 600);
   }
 }
 

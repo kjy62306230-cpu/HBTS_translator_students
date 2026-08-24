@@ -158,8 +158,13 @@ table.t td.v{font-variant-numeric:tabular-nums;font-weight:800;white-space:nowra
 .srow.low .big{color:var(--ink3)}
 
 /* ---------------- 코어 4기법 ---------------- */
-.core{border-top:1.5px solid rgba(244,241,234,.42);padding-top:26px;margin-top:34px}
+/* ⚠️ 04 의 lcard 와 같은 언어로 — 구분선만으로는 프레임이 아니다.
+   dark 섹션 안이므로 반투명 배경 + 밝은 테두리로 카드를 만든다. */
+.core{border:1.5px solid rgba(244,241,234,.3);border-radius:3px;
+  background:rgba(255,255,255,.05);margin:26px 0;padding:0;overflow:hidden}
 .core:first-of-type{margin-top:0}
+.core .ch{padding:18px 24px 0}
+.core .one{padding:0 24px 17px;border-bottom:1px solid rgba(244,241,234,.22)}
 .core .ch{display:grid;grid-template-columns:64px 1fr;gap:20px;align-items:baseline}
 @media(max-width:640px){.core .ch{grid-template-columns:1fr;gap:2px}}
 .core .cn{font-size:38px;font-weight:800;letter-spacing:-.05em;line-height:1;
@@ -167,9 +172,10 @@ table.t td.v{font-variant-numeric:tabular-nums;font-weight:800;white-space:nowra
 .core h3{font-size:25px;font-weight:800;letter-spacing:-.04em;color:#fff}
 .core .eng{font-size:11px;letter-spacing:.17em;text-transform:uppercase;
   color:rgba(244,241,234,.45);font-weight:600;margin-top:5px}
-.core .one{font-size:17.5px;color:#fff;margin:15px 0 0;font-weight:600;max-width:62ch}
-.core .body{margin-top:20px;padding-left:84px}
-@media(max-width:640px){.core .body{padding-left:0}}
+.core .one{font-size:17.5px;color:#fff;margin:14px 0 0;font-weight:600;max-width:62ch}
+.core .body{margin-top:0;padding:20px 24px 22px 84px}
+@media(max-width:640px){.core .ch{padding:15px 16px 0}.core .one{padding:0 16px 14px}
+  .core .body{padding:17px 16px 18px}}
 
 
 /* ---------------- 학습법 시각화 ---------------- */
@@ -232,6 +238,63 @@ table.t td.v{font-variant-numeric:tabular-nums;font-weight:800;white-space:nowra
 @media(max-width:640px){.entry .er{grid-template-columns:1fr;gap:4px}}
 .entry .er b{font-size:15px;font-weight:800;letter-spacing:-.03em}
 .entry .er span{font-size:15px;color:var(--ink2);line-height:1.75}
+
+/* ---------------- 학습 카드 (읽기 프레임) ----------------
+   학생이 글을 안 읽는다는 전제에서 만든 구조.
+   번호 + 제목 + 한 줄 요약을 헤더에 박아, 스캔만 해도 뭔지 알게 한다. */
+.lc{border:1.5px solid var(--ink);border-radius:3px;margin:24px 0;background:#fff;overflow:hidden}
+.alt .lc{background:var(--paper)}
+.dark .lc{background:rgba(255,255,255,.05);border-color:rgba(244,241,234,.3)}
+.lc .lch{display:grid;grid-template-columns:38px 1fr;gap:15px;align-items:start;
+  padding:15px 20px 14px;background:var(--forest);color:#fff}
+@media(max-width:640px){.lc .lch{grid-template-columns:1fr;gap:3px}}
+.lc .lch .n{font-size:27px;font-weight:800;line-height:.95;letter-spacing:-.05em;
+  color:rgba(255,255,255,.42);font-variant-numeric:tabular-nums}
+.lc .lch h3{font-size:19px;font-weight:800;letter-spacing:-.035em;color:#fff;margin:0;
+  border:none;padding:0}
+.lc .lch .sub{display:block;font-size:13.5px;color:rgba(255,255,255,.72);
+  margin-top:4px;line-height:1.6;font-weight:400;max-width:58ch}
+/* ⚠️ 초록 헤더 위의 강조는 반드시 흰색. 안 그러면 글자가 배경에 묻혀 사라진다. */
+.lc .lch .sub b,.lc .lch .sub strong{color:#fff;font-weight:700}
+.lc .lch h3 b,.lc .lch h3 strong{color:#fff}
+.lc .lcb{padding:20px 22px 22px}
+@media(max-width:640px){.lc .lcb{padding:17px 15px 18px}}
+.lc .lcb>*:first-child{margin-top:0}
+.lc .lcb p{max-width:62ch}
+.lc .lcb h3.blk{font-size:16px;margin:24px 0 11px;padding-bottom:8px;
+  border-bottom:1px solid var(--rule)}
+.lc .lcb h3.blk:first-child{margin-top:0}
+.lc .lcb table.t{margin:12px 0}
+.lc .lcb .callout,.lc .lcb .warnbox,.lc .lcb .pull{margin:16px 0}
+.lc .lcb>:last-child{margin-bottom:0}
+/* 인쇄 — ⚠️ 카드 전체에 break-inside:avoid 를 걸면 한 장 넘는 카드가 통째로 밀려
+   반쪽짜리 페이지가 생긴다. 2026-08-21 에 섹션에서 똑같은 실수를 했다.
+   최소 단위(헤더·이것만 바)만 묶는다. */
+@media print{
+  .lc .lch,.core .ch,.core .one{break-after:avoid}
+  .only,.rank,.mc{break-inside:avoid}
+  .lc,.core{break-inside:auto}
+}
+
+/* 카드 맨 아래 「이것만」 바 — 한 줄만 가져가도 되게 */
+.only{display:grid;grid-template-columns:auto 1fr;gap:13px;align-items:baseline;
+  margin:18px -22px -22px;padding:15px 22px;background:rgba(184,135,59,.13);
+  border-top:1px solid rgba(184,135,59,.4)}
+@media(max-width:640px){.only{margin:16px -15px -18px;padding:14px 15px}}
+.only i{font-style:normal;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--gold);font-weight:800;white-space:nowrap}
+.only span{font-size:15px;font-weight:700;letter-spacing:-.02em;line-height:1.6}
+.dark .only{background:rgba(184,135,59,.2);border-top-color:rgba(184,135,59,.5)}
+.dark .only span{color:#fff}
+
+/* 두 우성 배지 */
+.rank{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px}
+.rank div{border:1.5px solid var(--rule);border-radius:2px;padding:9px 15px;background:var(--paper);
+  display:flex;align-items:baseline;gap:9px}
+.alt .rank div{background:#fff}
+.rank i{font-style:normal;font-size:10px;letter-spacing:.14em;color:var(--ink3);font-weight:800}
+.rank b{font-size:16px;font-weight:800;letter-spacing:-.03em}
+.rank u{text-decoration:none;font-variant-numeric:tabular-nums;font-weight:800;color:var(--moss)}
 
 /* ---------------- 로드맵 ---------------- */
 .tl{border-left:1.5px solid var(--rule);padding-left:28px;margin:22px 0}
@@ -547,10 +610,14 @@ section.alt .promptbox{background:rgba(255,255,255,.72)}
 <section id="result">
   <div class="wrap noprint" style="padding-top:26px">
     <div class="btnrow" style="margin:0 0 8px">
-      <button class="btn" onclick="startDeep()">AI 심화 설계 추가</button>
-      <button class="btn ghost" onclick="window.print()">PDF로 저장 · 인쇄</button>
+      <button class="btn" onclick="window.print()">PDF로 저장 · 인쇄</button>
+      <button class="btn ghost" id="btnDeep" onclick="startDeep()">AI 심화 설계 추가</button>
       <button class="btn ghost" onclick="backToInput()">점수 수정</button>
     </div>
+    <p class="hint" style="margin:0 0 4px">
+      저장한 PDF를 <b>ChatGPT에 그대로 올려서</b> 대화하면 됩니다.
+      <a href="javascript:printAnon()" style="color:var(--moss);font-weight:600">이름 빼고 저장하기</a>
+      <span style="opacity:.7">— 학교 방침상 이름이 들어가면 안 될 때만 쓰세요</span></p>
   </div>
   <div class="wrap noprint"><div class="campbadge" id="campBadge" style="display:none"></div></div>
   <div id="report"></div>
