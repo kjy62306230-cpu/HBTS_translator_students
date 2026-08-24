@@ -653,9 +653,9 @@ function renderReport(p){
 
   /* ---------- 교사용 ---------- */
   const hiN = p.comp.length ? p.comp.map(a=>`${KB[a].ko}(${a})`).join(' · ') : `${A.ko}(${p.top1})`;
-  /* 교사·학부모용 페이지는 학생이 직접 쓰는 화면에서는 붙지 않는다.
-     강사 모드(하단 「강사용 도구」)를 켰을 때만 설계서 뒤에 붙는다. */
-  if(document.body.classList.contains('admin'))
+  /* 교사·학부모용 페이지는 학생 설계서에 붙지 않는다.
+     학급 자료는 관리자 페이지에서 따로 다룬다. */
+  if(false)
   H.push(`<div class="teacher"><div class="wrap">
     <span class="tag">교사 · 학부모용 — 학생 배부용 아님</span>
     <h2 style="font-size:29px;font-weight:800;letter-spacing:-.042em;margin-bottom:20px">${p.name==='학생'?'학생':p.name+' 학생'} 지도 가이드</h2>
@@ -778,7 +778,7 @@ async function aiFetch(body){
   });
 }
 
-function clearKey(){ window.__hbtsKey=''; try{localStorage.removeItem('hbts_api_key')}catch(e){} openAI(AI_MODE||'scan'); }
+function clearKey(){ window.__hbtsKey=''; try{localStorage.removeItem('hbts_api_key')}catch(e){} }
 
 function openAI(mode){
   AI_MODE=mode||'deep';
@@ -950,26 +950,9 @@ function mdBlock(t){
 
 livePreview();
 
-/* ------------------------------------------------------------------
-   강사용 도구 토글
-   ------------------------------------------------------------------
-   학생이 직접 쓰는 화면이므로 「예시 값 넣기」·「API 키 설정」은 기본으로 숨긴다.
-   강사가 자기 기기에서 한 번 켜두면 그 브라우저는 계속 켜진 상태를 기억한다.
-   주소 뒤에 #teacher 를 붙여도 켜진다.
------------------------------------------------------------------- */
-function setAdmin(on){
-  document.body.classList.toggle('admin', !!on);
-  const a = document.getElementById('teachToggle');
-  if(a) a.textContent = on ? '강사용 도구 숨기기' : '강사용 도구';
-  try{ localStorage.setItem('hbts_admin', on?'1':'') }catch(e){}
-}
-function toggleAdmin(){ setAdmin(!document.body.classList.contains('admin')); }
-(function(){
-  let on=false;
-  try{ on = localStorage.getItem('hbts_admin')==='1' }catch(e){}
-  if(location.hash === '#teacher') on = true;
-  setAdmin(on);
-})();
+/* 강사용 우회 통로는 두지 않는다.
+   코드 게이트가 생긴 뒤로는 그 자체가 구멍이 된다.
+   관리 기능은 전부 관리자 페이지(admin.html)에서 다룬다. */
 
 /* ==================================================================
    기재 공간 — 활동지 없이 크롬북에서 바로 쓴다
@@ -1168,12 +1151,6 @@ function enterTool(){
   $('input').style.display='block';
   window.scrollTo(0,0);
 }
-function gateSkip(){
-  try{ sessionStorage.setItem('hbts_gate','teacher') }catch(e){}
-  setAdmin(true);
-  enterTool();
-}
-
 async function gateGo(){
   const code = ($('gateCode').value||'').trim().toUpperCase();
   if(!code){ gateMsg('코드를 넣어주세요.','warnst'); return; }
@@ -1235,10 +1212,8 @@ async function loadStat(){
     const n = j && j.stats && Number(j.stats.reports);
     if(!n) return;
     const el = $('gateStat'); if(!el) return;
-    if(n >= STAT_MIN_SHOW || document.body.classList.contains('admin')){
-      el.innerHTML = `지금까지 <b>${n.toLocaleString()}명</b>의 학생이 이 도구로 설계서를 만들었습니다`
-        + (document.body.classList.contains('admin') && n < STAT_MIN_SHOW
-           ? `<i>강사에게만 보입니다 — ${STAT_MIN_SHOW}건을 넘으면 학생 화면에도 표시됩니다</i>` : '');
+    if(n >= STAT_MIN_SHOW){
+      el.innerHTML = `지금까지 <b>${n.toLocaleString()}명</b>의 학생이 이 도구로 설계서를 만들었습니다`;
     }
   }catch(e){ /* 실적은 없어도 툴은 돈다 */ }
 }
@@ -1250,14 +1225,12 @@ async function bumpStat(mode){
 (function(){
   let g=null;
   try{ g = sessionStorage.getItem('hbts_gate') }catch(e){}
-  if(g){
-    if(g==='teacher'){
-      setAdmin(true); enterTool();
-      const bar=$('codeBar'), txt=$('codeBarTxt');
-      if(bar&&txt){ txt.innerHTML='<b>강사용</b> — 코드 없이 들어왔습니다. 캠프 종류를 직접 골라주세요.';
-                    bar.style.display='flex'; }
-    }
-    else { try{ applyCamp(JSON.parse(g)) }catch(e){} enterTool(); }
+  if(g && g!=='teacher'){
+    try{ applyCamp(JSON.parse(g)); enterTool(); }
+    catch(e){ try{ sessionStorage.removeItem('hbts_gate') }catch(e2){} }
+  } else if(g==='teacher'){
+    /* 예전 버전에서 남은 강사 통과 표시는 지운다 */
+    try{ sessionStorage.removeItem('hbts_gate') }catch(e){}
   }
   const q = new URLSearchParams(location.search);
   const c = q.get('code');
