@@ -234,8 +234,11 @@ function renderReport(p){
      study  자기주도학습 캠프 — 진로·로드맵(06·07)을 뺀다
      번호는 남은 섹션에 다시 매긴다. 「01 02 05」처럼 비어 보이면 안 된다. */
   const MODE = p.mode || 'both';
-  const SKIP = MODE==='career' ? ['03','04','05']
+  /* career 는 03(4기법 상세)·05(시험 2주 계획)를 뺀다.
+     다만 04 는 「간략판」으로 살린다 — 진로 캠프에서도 학습법을 숙지하기 때문. */
+  const SKIP = MODE==='career' ? ['03','05']
              : MODE==='study'  ? ['06','07'] : [];
+  const BRIEF = (MODE==='career');   /* 학습 파트를 짧게 */
   const on = k => !SKIP.includes(k);
   let _n = 0;
   const num = () => String(++_n).padStart(2,'0');
@@ -347,8 +350,20 @@ function renderReport(p){
 
   /* ---------- 04 나의 진입로 ---------- */
   const en = ENTRY[p.top1];
-  let entry = `<p>${md(en.intro)}</p>
-    <div class="entry">${en.map.map(([k,v])=>`<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>`;
+  let entry = '';
+  if(BRIEF){
+    /* 진로 캠프 — 4기법을 따로 배우지 않으므로 여기서 한 번에 짧게 준다 */
+    entry += `<p>공부법은 <b>유형과 상관없이 효과가 확인된 네 가지</b>가 기본입니다.
+      먼저 이 넷을 알고, 그다음 <b>내 형식</b>으로 바꾸면 됩니다.</p>
+      <table class="t"><tbody>${CORE.map(c=>
+        `<tr><td class="k">${c.n} ${c.name}</td><td>${md(c.oneLine)}</td></tr>`).join('')}</tbody></table>
+      <h3 class="blk">${en.label.replace('의 진입로','은 이렇게 시작하면 됩니다')}</h3>
+      <div class="entry">${en.map.map(([k,v])=>
+        `<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>`;
+  } else {
+    entry += `<p>${md(en.intro)}</p>
+      <div class="entry">${en.map.map(([k,v])=>`<div class="er"><b>${k}</b><span>${md(v)}</span></div>`).join('')}</div>`;
+  }
 
   /* ★ 내 공부 흐름 — 4기법을 이 학생의 형식으로 짠 것 */
   const fl = FLOW[p.top1];
@@ -365,6 +380,11 @@ function renderReport(p){
   /* ── 유형별 거부 반응 (네 유형 전부 · 내 것 표시) ──
      블로그의 「실제로 이런 차이가 있습니다」에 해당한다. */
   const qr = QUIT_RISK[p.top1];
+  if(BRIEF){
+    entry += `<div class="warnbox" style="margin-top:26px"><b>${QUIT_RISK[p.top1].title}</b>
+      <ul class="pl" style="margin:10px 0 10px">${QUIT_RISK[p.top1].items.map(t=>`<li>${md(t)}</li>`).join('')}</ul>
+      ${md(QUIT_RISK[p.top1].why)}</div>`;
+  } else {
   entry += `<h3 class="blk">유형별 거부 반응</h3>
     <p>같은 말이 어떤 학생에게는 자유이고, 어떤 학생에게는 불안입니다.
        <b>「알아서 해봐」가 어떤 학생에게는 최악</b>입니다.</p>
@@ -379,6 +399,7 @@ function renderReport(p){
         <td>${QUIT_RISK[c].items.join(' · ')}</td></tr>`;
     }).join('')}</tbody></table>
     <div class="warnbox" style="margin-top:18px">${md(qr.why)}</div>`;
+  }
 
   /* ── 세 가지 처방 (블로그 약속: 암기 · 복습 · 필기) ── */
   const PX = PRESCRIPTION;
@@ -405,6 +426,7 @@ function renderReport(p){
   entry += `<h3 class="blk">외향성 ${p.ex} : 내향성 ${p.inv} — ${ei.title}</h3>
     <p>${md(ei.body)}</p><div class="pull">${md(ei.todo)}</div>`;
 
+  if(!BRIEF){
   entry += `<h3 class="blk">${AB_TEST.title}</h3><p>${md(AB_TEST.lead)}</p>
     <ol class="step">${AB_TEST.steps.map(x=>`<li><b>${x.n}</b> — ${md(x.d)}</li>`).join('')}</ol>
     <div class="callout"><h5>왜 느낌이 아니라 숫자인가</h5><p style="margin-bottom:0">${md(AB_TEST.note)}</p></div>`;
@@ -412,8 +434,10 @@ function renderReport(p){
   entry += `<h3 class="blk">${DAILY.title}</h3>
     <table class="t"><tbody>${DAILY.rows.map(r=>`<tr><td class="k">${r[0]}</td><td class="v">${r[1]}</td></tr>`).join('')}</tbody></table>
     <p>${md(DAILY.note)}</p><p class="src">${DAILY.src}</p>`;
+  }
 
-  if(on('04')) H.push(`<a id="gs2"></a>`+sec(num(),'Entry Point',`${en.label}`,
+  if(on('04')) H.push(`<a id="gs2"></a>`+sec(num(),'Study',
+    BRIEF ? '나에게 맞는 공부법' : `${en.label}`,
     '위 네 가지를 **어떤 모습으로 시작하면 이 학생이 첫 주에 포기하지 않을지**에 대한 제안입니다.',
     entry));
 
