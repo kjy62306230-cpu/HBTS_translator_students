@@ -271,6 +271,7 @@ function renderReport(p){
 
   /* ---------- 표지 ---------- */
   H.push(`<div class="cover"><div class="wrap">
+    <div class="cvbrand"><span class="bm w"></span><span>주식회사 뿌리깊이</span></div>
     <div class="eyebrow">${p.name} · ${GRADE[p.grade]} · HBTS 진로·학습 설계서</div>
     <h1>${md(A.oneLine).replace(/, /,',<br>')}</h1>
     <div class="std">
