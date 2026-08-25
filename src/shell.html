@@ -366,6 +366,8 @@ input:focus,select:focus{outline:none;border-color:var(--forest);box-shadow:inse
 input[type=number]{font-variant-numeric:tabular-nums;font-weight:700}
 .grid{display:grid;gap:20px}
 .g2{grid-template-columns:1fr 1fr}.g4{grid-template-columns:repeat(4,1fr)}
+.gsch{grid-template-columns:1.5fr 1fr 1fr}
+@media(max-width:700px){.gsch{grid-template-columns:1fr}}
 @media(max-width:700px){.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
 .hint{font-size:12px;color:var(--ink3);margin-top:6px;line-height:1.6}
 .ratio{display:flex;align-items:center;gap:10px}
@@ -626,11 +628,17 @@ section.alt .promptbox{background:rgba(255,255,255,.72)}
 
   <div class="fieldset">
     <div class="fh"><b>기본 정보</b></div>
-    <div class="grid g2">
+    <div class="grid gsch">
+      <div><label>학교</label><input type="text" id="school" placeholder="예) 부산중앙중학교"></div>
+      <div><label>학년 · 반</label><input type="text" id="klass" placeholder="예) 2학년 3반"></div>
       <div><label>이름</label><input type="text" id="name" placeholder="예) 김주엽"></div>
-      <div><label>학년 — 결과지에 없어 직접 고릅니다</label><select id="grade">
+    </div>
+    <div style="margin-top:20px">
+      <label>학교급 — 결과지에 없어 직접 고릅니다</label>
+      <select id="grade">
         <option value="초">초등 고학년</option><option value="중" selected>중학생</option><option value="고">고등학생</option>
-      </select></div>
+      </select>
+      <p class="hint">설계서 내용(로드맵·과목 선택)이 여기에 맞춰 달라집니다.</p>
     </div>
     <div style="margin-top:22px">
       <label>어떤 캠프인가요</label>

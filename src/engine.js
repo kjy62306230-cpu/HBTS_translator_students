@@ -73,6 +73,8 @@ function buildProfile(){
   }
 
   return { name:$('name').value.trim()||'학생', grade:$('grade').value,
+    school:$('school')?$('school').value.trim():'',
+    klass:$('klass')?$('klass').value.trim():'',
     mode: ($('mode')&&$('mode').value)||'both',
     six: !!($('six')&&$('six').checked),
     scores:s, child:hasChild?child:null, shift,
@@ -287,7 +289,8 @@ function renderReport(p){
       <div class="cvkind"><i></i>${KIND}</div>
       <h1 class="cvtitle">HBTS<span class="l2">학생 맞춤형 설계서</span></h1>
       <div class="cvwho">
-        <b>${esc(p.name)}</b><span>${GRADE[p.grade]}</span>
+        <b>${esc(p.name)}</b>
+        <span>${[esc(p.school), esc(p.klass)].filter(Boolean).join(' · ') || GRADE[p.grade]}</span>
       </div>
       <p class="cvline">${md(A.oneLine).replace(/, /,',<br>')}</p>
     </div>
@@ -1191,9 +1194,14 @@ async function startDeep(){
 function printAnon(){
   const rep = $('report'), slot = $('aiSlot');
   const keepR = rep.innerHTML, keepS = slot ? slot.innerHTML : '';
-  const nm = (P && P.name) ? String(P.name).trim() : '';
-  const swap = h => (!nm || nm==='학생') ? h
-    : h.split(nm).join('학생');
+  /* 이름만 지우면 「○○중 2학년 3반」으로 특정됩니다. 학교·반도 같이 지웁니다. */
+  const hide = [];
+  if(P){
+    if(P.name && P.name!=='학생') hide.push([P.name, '학생']);
+    if(P.school) hide.push([P.school, '○○학교']);
+    if(P.klass)  hide.push([P.klass,  '○학년 ○반']);
+  }
+  const swap = h => hide.reduce((t,[from,to])=> t.split(from).join(to), h);
   try{
     rep.innerHTML = swap(keepR);
     if(slot) slot.innerHTML = swap(keepS);
