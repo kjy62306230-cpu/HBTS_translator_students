@@ -212,7 +212,8 @@ function generate(){
      기하 검산이 불일치를 잡았는데도 그냥 눌러서 넘어갈 수 있었던 것이 원인이다.
      이제는 한 번 막고, 사용자가 「그래도 진행」을 명시적으로 눌러야 넘어간다. */
   if(typeof GEO!=='undefined' && GEO && !GEO.ok && !window.__geoAck){
-    const bad = ['LAB','RAB','LPB','RPB'].filter(a=>GEO.per[a].off>0.15);
+    const LIM = GEO.exact ? 0.02 : 0.15;
+    const bad = ['LAB','RAB','LPB','RPB'].filter(a=>!GEO.per[a].unread && GEO.per[a].off>LIM);
     const lines = bad.map(a=>`  · ${KB[a].ko} — 넣은 값 ${GEO.per[a].given}점 / 그림이 말하는 값 ${GEO.per[a].est}점`).join('\n');
     const go = confirm(
       `잠깐만요. 점수가 결과지 그래프와 맞지 않습니다.\n\n${lines}\n\n`+

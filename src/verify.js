@@ -66,6 +66,9 @@ function findPolygon(dataUrl, want){   // want: 'red' | 'blue'
           }
           V[k]=[bx,by];
         }
+        /* 크롭에 쓰려면 원본 좌표가 필요하다. S 로 축소해 찾았으므로 되돌려 붙인다. */
+        V.__raw = {}; for(const k in dirs) V.__raw[k] = [V[k][0]*S, V[k][1]*S];
+        V.__center = null;
         resolve(V);
       }catch(e){ resolve(null); }
     };
@@ -151,4 +154,50 @@ function childIsPlaceholder(dataUrl){
     img.onerror = ()=>resolve(false);
     img.src = dataUrl;
   });
+}
+
+
+/* ------------------------------------------------------------------
+   꼭짓점 주변을 잘라낸다 — 그림에 「인쇄된 숫자」를 직접 읽기 위해
+   ------------------------------------------------------------------
+   2026-08-24 J님 지적: 「그림에도 34라고 되어 있는데」
+   거리를 재서 추정하면 선 두께만큼 1~3점이 어긋난다.
+   결과지에는 숫자가 그대로 인쇄돼 있으므로, 꼭짓점 근처만 잘라
+   확대해서 다시 읽는 편이 훨씬 정확하다. 작은 이미지라 비용도 거의 없다.
+------------------------------------------------------------------ */
+function cropAt(dataUrl, cx, cy, w, h, zoom){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = ()=>{
+      try{
+        const Z = zoom || 2;
+        const x0 = Math.max(0, Math.round(cx - w/2));
+        const y0 = Math.max(0, Math.round(cy - h/2));
+        const ww = Math.min(w, img.width  - x0);
+        const hh = Math.min(h, img.height - y0);
+        if(ww<10 || hh<10) return resolve(null);
+        const cv = document.createElement('canvas');
+        cv.width = ww*Z; cv.height = hh*Z;
+        const cx2 = cv.getContext('2d');
+        cx2.imageSmoothingQuality = 'high';
+        cx2.drawImage(img, x0,y0,ww,hh, 0,0, ww*Z, hh*Z);
+        resolve(cv.toDataURL('image/png'));
+      }catch(e){ resolve(null); }
+    };
+    img.onerror = ()=>resolve(null);
+    img.src = dataUrl;
+  });
+}
+
+/* 네 꼭짓점 주변 크롭 4장을 만든다 */
+async function vertexCrops(dataUrl, want){
+  const V = await findPolygon(dataUrl, want||'red');
+  if(!V || !V.__raw) return null;
+  const R = V.__raw;
+  const out = {};
+  for(const k of ['LAB','RAB','LPB','RPB']){
+    out[k] = await cropAt(dataUrl, R[k][0], R[k][1], 200, 120, 2);
+    if(!out[k]) return null;
+  }
+  return out;
 }

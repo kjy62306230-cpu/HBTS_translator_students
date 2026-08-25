@@ -108,7 +108,7 @@ async function handlePdf(file){
     try{
       const sc = await readScores(adultImg, childImg);
       applyScores(sc);
-      const chk = sc.adult ? await geoCheck(adultImg, sc.adult, 'red') : null;
+      const chk = await runCheck(adultImg, sc.adult);
       showConfirm(meta, sc, true, null, chk);
     }catch(e){
       showConfirm(meta, null, false, String(e.message||e));
@@ -193,6 +193,86 @@ function applyScores(sc){
 }
 
 /* ---------- Vision 판독 ---------- */
+/* ------------------------------------------------------------------
+   2차 판독 — 꼭짓점 근처만 잘라 확대해서 숫자를 다시 읽는다
+   ------------------------------------------------------------------
+   ⚠️ 2026-08-24 J님 지적: 「그림에도 34라고 되어 있는데」
+   거리 추정(geoCheck)은 선 두께 때문에 1~3점이 늘 어긋난다.
+   결과지에는 숫자가 인쇄돼 있으므로 그걸 직접 읽는 편이 정확하다.
+   전체 그림을 다시 보내지 않고 **꼭짓점 주변 200x120 을 2배 확대한 4장**만 보낸다.
+   작고 명확해서 오판독이 거의 없고, 토큰도 얼마 안 든다.
+   실패하면 기존 거리 추정으로 폴백한다.
+------------------------------------------------------------------ */
+/* 검산 한 방에 — ① 꼭짓점 숫자 재판독(정확)  ② 거리 추정(폴백)
+   둘 다 시도해서 하나의 결과 객체로 만든다. */
+async function runCheck(adultImg, scores){
+  if(!scores) return null;
+  const ORD = ['LAB','RAB','LPB','RPB'];
+
+  /* ① 그림에 인쇄된 숫자를 다시 읽는다 — 오차 없음 */
+  const re = await readVertexNumbers(adultImg);
+  if(re){
+    const per={}; let worst=ORD[0], worstOff=-1, n=0;
+    for(const k of ORD){
+      const est = re[k];
+      if(est==null){ per[k]={given:scores[k], est:null, off:0, unread:true}; continue; }
+      n++;
+      const off = scores[k]>0 ? Math.abs(est-scores[k])/Math.max(scores[k],est) : 0;
+      per[k] = { given:scores[k], est, off };
+      if(off>worstOff){ worstOff=off; worst=k; }
+    }
+    if(n>=2) return { per, worst, dev:worstOff, ok:worstOff<=0.02, src:'read', exact:true };
+  }
+
+  /* ② 폴백 — 꼭짓점 거리로 추정 (선 두께만큼 1~3점 오차가 있다) */
+  const g = await geoCheck(adultImg, scores, 'red');
+  if(g) g.src = 'geo';
+  return g;
+}
+
+async function readVertexNumbers(adultImg){
+  let crops;
+  try{ crops = await vertexCrops(adultImg, 'red'); }catch(e){ return null; }
+  if(!crops) return null;
+
+  const model = ($('apiModel') && $('apiModel').value.trim()) || AI_MODEL_DEFAULT;
+  const ORD = ['LAB','RAB','LPB','RPB'];
+  const NAME = {LAB:'좌측 전뇌(왼쪽 위)', RAB:'우측 전뇌(오른쪽 위)',
+                LPB:'좌측 후뇌(왼쪽 아래)', RPB:'우측 후뇌(오른쪽 아래)'};
+  const content = [{type:'text', text:
+`아래 4장은 HBTS 결과지 그래프에서 **빨간 사각형의 꼭짓점 부분만 잘라 확대한 것**입니다.
+각 이미지에는 그 꼭짓점에 붙은 **굵은 검은색 숫자**가 하나 들어 있습니다. 그 숫자만 읽어 주세요.
+
+· 숫자는 보통 20~140 사이의 두세 자리입니다
+· **빨간 글씨·설명 문구·라벨은 무시**하세요. 굵은 검은 숫자만 읽습니다
+· 숫자가 잘려 보이거나 확실하지 않으면 그 항목은 **null** 로 두세요. 추측하지 마세요`}];
+
+  for(const k of ORD){
+    content.push({type:'image', source:{type:'base64', media_type:'image/png', data: crops[k].split(',')[1]}});
+    content.push({type:'text', text:`↑ ${NAME[k]} 꼭짓점`});
+  }
+  content.push({type:'text', text:
+`JSON 만 출력하세요. 설명·코드블록 없이.
+{"LAB":숫자,"RAB":숫자,"LPB":숫자,"RPB":숫자}`});
+
+  try{
+    const r = await aiFetch({ model, max_tokens:200, messages:[{role:'user', content}] });
+    const j = await r.json();
+    if(!r.ok) return null;
+    const txt = (j.content||[]).map(c=>c.text||'').join('');
+    const m = txt.match(/\{[\s\S]*\}/);
+    if(!m) return null;
+    const o = JSON.parse(m[0]);
+    const out = {};
+    for(const k of ORD){
+      const v = parseInt(o[k],10);
+      out[k] = (isNaN(v) || v<0 || v>200) ? null : v;
+    }
+    /* 네 개 다 못 읽었으면 쓸모없다 */
+    return ORD.some(k=>out[k]!==null) ? out : null;
+  }catch(e){ return null; }
+}
+
 async function readScores(adultImg, childImg){
   const model = ($('apiModel') && $('apiModel').value.trim()) || AI_MODEL_DEFAULT;
   const content = [];
@@ -302,24 +382,41 @@ function showConfirm(meta, sc, visionOk, err, chk, scanned){
   GEO = chk || null;
   let geo='';
 
+  /* 검산 경로에 따라 임계값과 말이 다르다.
+     read = 그림에 인쇄된 숫자를 다시 읽음 → 다르면 무조건 틀린 것
+     geo  = 꼭짓점 거리로 추정      → 선 두께만큼 1~3점 오차가 늘 있다 */
+  const EXACT = !!(chk && chk.exact);
+  const LIMIT = EXACT ? 0.02 : 0.15;
+  const COL2  = EXACT ? '그래프에서 다시 읽은 값' : '그래프 모양으로 잰 값';
+
   const geoRow = c => ['LAB','RAB','LPB','RPB'].map(a=>{
-      const pe=c.per[a], bad=pe.off>0.15;
+      const pe=c.per[a];
+      if(pe.unread) return `<tr>
+        <td><span class="sw" style="background:${KB[a].color}"></span>${KB[a].ko}</td>
+        <td class="n">${pe.given}</td><td class="n" style="opacity:.45">—</td>
+        <td class="n" style="opacity:.6;font-weight:600">못 읽음</td></tr>`;
+      const bad=pe.off>LIMIT;
+      const same=pe.est===pe.given;
       return `<tr${bad?' class="x"':''}>
         <td><span class="sw" style="background:${KB[a].color}"></span>${KB[a].ko}</td>
         <td class="n">${pe.given}</td>
         <td class="n">${pe.est}</td>
-        <td class="n ${bad?'r':''}">${bad?Math.round(pe.off*100)+'% 차이':'맞음'}</td>
+        <td class="n ${bad?'r':''}">${bad ? (EXACT?'다릅니다':Math.round(pe.off*100)+'% 차이')
+                                          : (EXACT&&same?'일치':'맞음')}</td>
       </tr>`;}).join('');
 
   if(chk){
-    const badKeys = ['LAB','RAB','LPB','RPB'].filter(a=>chk.per[a].off>0.15);
+    const badKeys = ['LAB','RAB','LPB','RPB'].filter(a=>!chk.per[a].unread && chk.per[a].off>LIMIT);
     const table = `<table class="geot"><thead><tr>
-        <th>영역</th><th class="n">읽어온 값</th><th class="n">그림이 말하는 값</th><th class="n">판정</th>
+        <th>영역</th><th class="n">읽어온 값</th><th class="n">${COL2}</th><th class="n">판정</th>
       </tr></thead><tbody>${geoRow(chk)}</tbody></table>`;
 
     if(chk.ok){
-      geo = `<div class="geo ok">✓ <b>검산 통과</b> — 네 영역 모두 그래프 모양과 맞습니다.
-        <span>AI 판독과 그림 계산이 서로 독립적으로 같은 답을 냈습니다.</span>${table}</div>`;
+      geo = EXACT
+        ? `<div class="geo ok">✓ <b>검산 통과</b> — 그래프에 인쇄된 숫자를 <b>다시 읽어서</b> 대조했고 같습니다.
+            <span>꼭짓점 부분만 잘라 확대해 두 번째로 읽은 값입니다. 추정이 아니라 실제 숫자입니다.</span>${table}</div>`
+        : `<div class="geo ok">✓ <b>검산 통과</b> — 네 영역 모두 그래프 모양과 맞습니다.
+            <span>꼭짓점까지의 거리로 계산한 값이라 <b>1~3점 오차</b>가 있습니다. 판정만 보시면 됩니다.</span>${table}</div>`;
     } else {
       const names = badKeys.map(a=>`<b>${KB[a].ko}</b>`).join(' · ');
       geo = `<div class="geo bad">⚠ <b>검산 불일치 — ${badKeys.length}개 영역이 그림과 다릅니다</b><br>
@@ -327,9 +424,11 @@ function showConfirm(meta, sc, visionOk, err, chk, scanned){
         결과지 원본(아래 이미지)을 꼭 확인해 주세요.
         ${table}
         <p style="margin:10px 0 0;font-size:12.5px;opacity:.85">
-          그림 계산은 <b>실측 오차 1~3%</b>로 검증돼 있습니다. 대개 그림 쪽이 맞습니다.</p>
+          ${EXACT
+            ? '오른쪽 값은 <b>그래프에 인쇄된 숫자를 확대해 다시 읽은 것</b>입니다. 대개 이쪽이 맞습니다.'
+            : '그림 계산은 <b>실측 오차 1~3%</b>로 검증돼 있습니다. 대개 그림 쪽이 맞습니다.'}</p>
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn sm" onclick="applyGeoAll()">그림이 말하는 값으로 전부 고치기</button>
+          <button class="btn sm" onclick="applyGeoAll()">${EXACT?'다시 읽은 값으로 고치기':'그림이 말하는 값으로 전부 고치기'}</button>
           ${badKeys.map(a=>`<button class="btn sm ghost" onclick="applyGeoFix('${a}',${chk.per[a].est})">
             ${KB[a].ko} → ${chk.per[a].est}</button>`).join('')}
         </div></div>`;
@@ -377,7 +476,7 @@ async function retryVision(){
   try{
     const sc = await readScores(PDFPAGES.adult.img, PDFPAGES.child?PDFPAGES.child.img:null);
     applyScores(sc);
-    const chk = sc.adult ? await geoCheck(PDFPAGES.adult.img, sc.adult, 'red') : null;
+    const chk = await runCheck(PDFPAGES.adult.img, sc.adult);
     showConfirm(PDFMETA||{}, sc, true, null, chk);
   }catch(e){
     showConfirm(PDFMETA||{}, null, false, String(e.message||e));
@@ -393,15 +492,18 @@ function applyGeoAll(){
   /* ⚠️ 오차가 큰 영역만 고친다.
      맞게 읽은 값까지 그림 추정치로 덮으면 79 를 81 로 바꿔 오히려 나빠진다.
      그림 계산에는 선 두께만큼의 1~3% 오차가 늘 있다. */
+  const LIM = GEO.exact ? 0.02 : 0.15;
   ORD.forEach(a=>{
     const pe=GEO.per[a];
-    if(pe && pe.est>0 && pe.off>0.15){ $('s_'+a).value=pe.est; changed.push(`${KB[a].ko} ${pe.given} → ${pe.est}`); }
+    if(pe && !pe.unread && pe.est>0 && pe.off>LIM){
+      $('s_'+a).value=pe.est; changed.push(`${KB[a].ko} ${pe.given} → ${pe.est}`);
+    }
   });
   livePreview();
   /* 고친 값으로 다시 검산한다. 눈속임이 아니라 실제로 맞는지 본다. */
   (async()=>{
     const sc={}; ORD.forEach(a=>sc[a]=parseInt($('s_'+a).value,10));
-    GEO = PDFPAGES ? await geoCheck(PDFPAGES.adult.img, sc, 'red') : null;
+    GEO = PDFPAGES ? await runCheck(PDFPAGES.adult.img, sc) : null;
     setStatus(`<div class="cf"><div class="geo ok">✓ <b>그림이 말하는 값으로 고쳤습니다.</b><br>
       ${changed.length?changed.join(' &nbsp;·&nbsp; '):'바뀐 값이 없습니다.'}
       ${GEO&&GEO.ok?'<br><b>다시 검산했고 이제 맞습니다.</b>':''}</div>
@@ -418,7 +520,7 @@ function applyGeoFix(area, val){
   livePreview();
   if(PDFPAGES){ (async()=>{
     const sc={}; ['LAB','RAB','LPB','RPB'].forEach(a=>sc[a]=parseInt($('s_'+a).value,10));
-    GEO = await geoCheck(PDFPAGES.adult.img, sc, 'red');
+    GEO = await runCheck(PDFPAGES.adult.img, sc);
   })(); }
   setStatus(`<div class="cf"><div class="geo ok">✓ <b>${KB[area].ko}(${area})</b>를 <b>${val}점</b>으로 고쳤습니다.
     결과지 원본과 한 번 더 대조해 주세요.</div>
@@ -535,7 +637,7 @@ async function runScan(){
     applyMeta(meta);
     applyScores(sc);
 
-    const chk = sc.adult ? await geoCheck(adultImg, sc.adult, 'red') : null;
+    const chk = await runCheck(adultImg, sc.adult);
     showConfirm(meta, sc, true, null, chk, true);
 
   }catch(e){
