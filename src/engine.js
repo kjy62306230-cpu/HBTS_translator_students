@@ -270,10 +270,28 @@ function renderReport(p){
   const H=[];
 
   /* ---------- 표지 ---------- */
+  /* ---------- 표지 ----------
+     2026-08-25 J님 지시
+       「이름+학년+캠프종류 + 멋진 표지로 HBTS 학생 맞춤형 설계서 라는 이름으로 시작」
+       「'주식회사 뿌리깊이' 보단 '뿌리깊이 진로캠프'」
+     ⚠️ A4 한 장을 꽉 채운다. 위만 차지하고 아래가 비면 인쇄가 잘못된 것처럼 보인다. */
+  const KIND = { career:'진로 캠프 · 4차시',
+                 study :'자기주도학습 캠프 · 4차시',
+                 both  :'학업 로드맵 캠프 · 6차시' }[MODE] || '진로·학습 설계';
+
   H.push(`<div class="cover"><div class="wrap">
-    <div class="cvbrand"><span class="bm w"></span><span>주식회사 뿌리깊이</span></div>
-    <div class="eyebrow">${p.name} · ${GRADE[p.grade]} · HBTS 진로·학습 설계서</div>
-    <h1>${md(A.oneLine).replace(/, /,',<br>')}</h1>
+    <div class="cvbrand"><span class="bm w"></span>
+      <span><b>뿌리깊이 진로캠프</b><small>Deep Roots, Bright Futures</small></span></div>
+
+    <div class="cvmid">
+      <div class="cvkind"><i></i>${KIND}</div>
+      <h1 class="cvtitle">HBTS<span class="l2">학생 맞춤형 설계서</span></h1>
+      <div class="cvwho">
+        <b>${esc(p.name)}</b><span>${GRADE[p.grade]}</span>
+      </div>
+      <p class="cvline">${md(A.oneLine).replace(/, /,',<br>')}</p>
+    </div>
+
     <div class="std">
       <span>가장 높은 영역<b>${A.ko} ${s[p.top1]}</b></span>
       <span>가장 낮은 영역<b>${L.ko} ${s[p.low]}</b></span>
@@ -904,7 +922,7 @@ function renderReport(p){
       <h4 class="mini" style="color:rgba(244,241,234,.55)">보완 지도 — ${L.ko}(${p.low}) 기준</h4>
       <ul class="pl">${ws.teacher.map(t=>`<li>${md(t)}</li>`).join('')}</ul>
       ${ws.teacherNote?`<p class="src">${ws.teacherNote}</p>`:''}` : ''}
-    <p class="src" style="margin-top:26px">주식회사 뿌리깊이 · 1551-1294 &nbsp;|&nbsp; HBTS 전문가 상담 www.hbbrain.co.kr</p>
+    <p class="src" style="margin-top:26px">뿌리깊이 진로캠프 · 1551-1294 &nbsp;|&nbsp; HBTS 전문가 상담 www.hbbrain.co.kr</p>
   </div></div>`);
 
   return H.join('');

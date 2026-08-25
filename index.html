@@ -68,11 +68,34 @@ em{font-style:normal}
 .cover::after{content:'';position:absolute;inset:0;
   background:radial-gradient(120% 90% at 78% 15%, rgba(110,155,46,.22), transparent 62%),
              radial-gradient(90% 70% at 8% 92%, rgba(196,102,28,.16), transparent 60%);}
-.cover .wrap{position:relative;z-index:2;padding-top:64px;padding-bottom:60px}
-.cvbrand{display:flex;align-items:center;gap:11px;margin-bottom:30px}
-.cvbrand .bm{width:38px;height:38px}
-.cvbrand span:last-child{font-size:13px;font-weight:700;letter-spacing:-.01em;
-  color:rgba(244,241,234,.82)}
+/* ⚠️ 표지는 A4 한 장을 꽉 채운다.
+   위쪽만 차지하고 아래가 텅 비면 「인쇄가 잘못됐나」로 읽힌다 (2026-08-25 J님 지적). */
+.cover .wrap{position:relative;z-index:2;padding-top:64px;padding-bottom:60px;
+  min-height:min(88vh,760px);display:flex;flex-direction:column}
+.cvbrand{display:flex;align-items:center;gap:12px}
+.cvbrand .bm{width:40px;height:40px}
+.cvbrand b{font-size:16px;font-weight:800;letter-spacing:-.02em;color:#fff;display:block;line-height:1.25}
+.cvbrand small{display:block;font-size:9px;letter-spacing:.22em;font-weight:600;
+  color:rgba(244,241,234,.5);text-transform:uppercase}
+
+/* 가운데 — 제목 덩어리를 남는 공간이 밀어 올린다 */
+.cvmid{flex:1;display:flex;flex-direction:column;justify-content:center;
+  padding:46px 0 34px}
+.cvkind{display:inline-flex;align-items:center;gap:9px;align-self:flex-start;
+  border:1px solid rgba(244,241,234,.34);border-radius:2px;padding:7px 15px;
+  font-size:12px;font-weight:700;letter-spacing:-.01em;color:rgba(244,241,234,.9);
+  margin-bottom:26px}
+.cvkind i{font-style:normal;width:5px;height:5px;background:#8FBF8A;border-radius:50%}
+.cvtitle{font-size:clamp(40px,7.4vw,74px);line-height:1.02;font-weight:800;
+  letter-spacing:-.05em;margin:0}
+.cvtitle .l2{display:block;font-weight:300;color:rgba(244,241,234,.66)}
+.cvwho{margin-top:30px;padding-top:22px;border-top:1px solid rgba(244,241,234,.18);
+  display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.cvwho b{font-size:27px;font-weight:800;letter-spacing:-.035em;color:#fff}
+.cvwho span{font-size:14px;color:rgba(244,241,234,.68);font-weight:500}
+.cvline{margin-top:20px;font-size:18px;line-height:1.6;font-weight:600;
+  color:rgba(244,241,234,.9);max-width:34ch}
+.cvline em{font-style:normal;color:#A8CF45}
 .eyebrow{font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;
   color:rgba(244,241,234,.5);margin-bottom:26px;font-weight:600}
 .cover h1{font-size:clamp(38px,6.6vw,68px);line-height:1.06;font-weight:800;letter-spacing:-.045em}
@@ -490,7 +513,13 @@ section.alt .promptbox{background:rgba(255,255,255,.72)}
   .cover{break-after:page}
   /* .wrap{padding:0} 을 받아 표지 글자가 배경 밖으로 밀려 왼쪽이 잘렸다.
      배경이 있는 블록은 인쇄에서도 좌우 여백이 필요하다. */
-  .cover .wrap{padding:34px 16px}
+  /* 인쇄에서도 표지는 한 장을 채운다. 브라우저 머리글·바닥글이 켜져 있을 수 있어
+     269mm 를 다 쓰지 않고 여유를 둔다. */
+  .cover .wrap{padding:26px 16px;min-height:266mm}
+  .cvmid{padding:30px 0 22px}
+  .cvtitle{font-size:46pt}
+  .cvwho b{font-size:19pt}
+  .cvline{font-size:12.5pt}
   .teacher .wrap{padding-left:16px;padding-right:16px}
   .teacher{break-before:page}
   .sechead{margin-bottom:20px;break-inside:avoid;break-after:avoid}
@@ -531,7 +560,7 @@ section.alt .promptbox{background:rgba(255,255,255,.72)}
 <div class="masthead noprint"><div class="wrap">
   <div class="logo">
     <span class="mk bm" role="img" aria-label="뿌리깊이"></span>
-    <span><b>뿌리깊이</b><small>DEEP ROOTS, BRIGHT FUTURES</small></span>
+    <span><b>뿌리깊이 진로캠프</b><small>DEEP ROOTS, BRIGHT FUTURES</small></span>
   </div>
   <div class="meta">HBTS 진로·학습 설계 &nbsp;·&nbsp; 1551-1294</div>
 </div></div>
@@ -2647,10 +2676,28 @@ function renderReport(p){
   const H=[];
 
   /* ---------- 표지 ---------- */
+  /* ---------- 표지 ----------
+     2026-08-25 J님 지시
+       「이름+학년+캠프종류 + 멋진 표지로 HBTS 학생 맞춤형 설계서 라는 이름으로 시작」
+       「'주식회사 뿌리깊이' 보단 '뿌리깊이 진로캠프'」
+     ⚠️ A4 한 장을 꽉 채운다. 위만 차지하고 아래가 비면 인쇄가 잘못된 것처럼 보인다. */
+  const KIND = { career:'진로 캠프 · 4차시',
+                 study :'자기주도학습 캠프 · 4차시',
+                 both  :'학업 로드맵 캠프 · 6차시' }[MODE] || '진로·학습 설계';
+
   H.push(`<div class="cover"><div class="wrap">
-    <div class="cvbrand"><span class="bm w"></span><span>주식회사 뿌리깊이</span></div>
-    <div class="eyebrow">${p.name} · ${GRADE[p.grade]} · HBTS 진로·학습 설계서</div>
-    <h1>${md(A.oneLine).replace(/, /,',<br>')}</h1>
+    <div class="cvbrand"><span class="bm w"></span>
+      <span><b>뿌리깊이 진로캠프</b><small>Deep Roots, Bright Futures</small></span></div>
+
+    <div class="cvmid">
+      <div class="cvkind"><i></i>${KIND}</div>
+      <h1 class="cvtitle">HBTS<span class="l2">학생 맞춤형 설계서</span></h1>
+      <div class="cvwho">
+        <b>${esc(p.name)}</b><span>${GRADE[p.grade]}</span>
+      </div>
+      <p class="cvline">${md(A.oneLine).replace(/, /,',<br>')}</p>
+    </div>
+
     <div class="std">
       <span>가장 높은 영역<b>${A.ko} ${s[p.top1]}</b></span>
       <span>가장 낮은 영역<b>${L.ko} ${s[p.low]}</b></span>
@@ -3281,7 +3328,7 @@ function renderReport(p){
       <h4 class="mini" style="color:rgba(244,241,234,.55)">보완 지도 — ${L.ko}(${p.low}) 기준</h4>
       <ul class="pl">${ws.teacher.map(t=>`<li>${md(t)}</li>`).join('')}</ul>
       ${ws.teacherNote?`<p class="src">${ws.teacherNote}</p>`:''}` : ''}
-    <p class="src" style="margin-top:26px">주식회사 뿌리깊이 · 1551-1294 &nbsp;|&nbsp; HBTS 전문가 상담 www.hbbrain.co.kr</p>
+    <p class="src" style="margin-top:26px">뿌리깊이 진로캠프 · 1551-1294 &nbsp;|&nbsp; HBTS 전문가 상담 www.hbbrain.co.kr</p>
   </div></div>`);
 
   return H.join('');
